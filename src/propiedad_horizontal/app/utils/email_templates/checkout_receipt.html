@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo de Parqueadero</title>
+</head>
+<body style="margin: 0; padding: 20px; background-color: #667eea; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+
+                <!-- Email container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+                    style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden;">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td style="background-color: #28a745; padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                ✅ ¡Gracias por usar nuestro servicio!
+                            </h1>
+                            <p style="color: #ffffff; margin: 10px 0 0 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                Tu reserva de parqueadero ha sido completada
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- MAIN CONTENT -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+
+                            <!-- Greeting -->
+                            <p style="font-size: 18px; color: #333333; margin: 0 0 15px 0; line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                Hola <strong>{{ visitor_name }}</strong>,
+                            </p>
+                            <p style="font-size: 18px; color: #333333; margin: 0 0 30px 0; line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                Tu vehículo ha sido liberado exitosamente del parqueadero.
+                                A continuación encuentra los detalles de tu estancia y el total a pagar.
+                            </p>
+
+                            <!-- Section title -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 2px solid #eeeeee;">
+                                <tr>
+                                    <td style="padding-top: 30px; padding-bottom: 15px;">
+                                        <h2 style="font-size: 14px; font-weight: 600; color: #28a745; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                            📋 Resumen de la Estancia
+                                        </h2>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Reservation Details Grid -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <!-- Row 1: ID + Puesto -->
+                                <tr>
+                                    <td width="48%" style="background-color: #f0f8f5; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; vertical-align: top;">
+                                        <div style="font-size: 11px; color: #999999; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">ID Reserva</div>
+                                        <div style="font-size: 16px; font-weight: 600; color: #333333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">#{{ reservation_id }}</div>
+                                    </td>
+                                    <td width="4%"></td>
+                                    <td width="48%" style="background-color: #f0f8f5; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; vertical-align: top;">
+                                        <div style="font-size: 11px; color: #999999; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Puesto</div>
+                                        <div style="font-size: 16px; font-weight: 600; color: #333333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">{{ spot_number }}</div>
+                                    </td>
+                                </tr>
+                                <tr><td colspan="3" style="padding: 8px 0;"></td></tr>
+                                <!-- Row 2: Entrada -->
+                                <tr>
+                                    <td colspan="3" style="background-color: #f0f8f5; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                        <div style="font-size: 11px; color: #999999; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Entrada</div>
+                                        <div style="font-size: 16px; font-weight: 600; color: #333333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">📅 {{ starts_at_formatted }}</div>
+                                    </td>
+                                </tr>
+                                <tr><td colspan="3" style="padding: 8px 0;"></td></tr>
+                                <!-- Row 3: Salida -->
+                                <tr>
+                                    <td colspan="3" style="background-color: #f0f8f5; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                        <div style="font-size: 11px; color: #999999; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Salida</div>
+                                        <div style="font-size: 16px; font-weight: 600; color: #333333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">📅 {{ ends_at_formatted }}</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Price Breakdown -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+                                <tr>
+                                    <td style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px;">
+                                        <p style="font-size: 14px; color: #856404; font-weight: 600; margin: 0 0 10px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                            💰 Desglose del Costo
+                                        </p>
+                                        <p style="font-size: 13px; color: #856404; margin: 0 0 15px 0; line-height: 1.8; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace;">{{ price_breakdown }}</p>
+                                        <p style="font-size: 24px; font-weight: 700; color: #28a745; text-align: center; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                            {{ total_price_formatted }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Thank you -->
+                            <p style="font-size: 16px; color: #28a745; font-weight: 600; text-align: center; margin: 30px 0 0 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                ¡Gracias por confiar en nuestro servicio! 🙏
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                <strong>¿Preguntas?</strong>
+                            </p>
+                            <p style="margin: 0 0 15px 0; font-size: 12px; color: #666666; line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                Contacta a nuestro equipo de soporte a través de la app o responde a este email.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: #666666; border-top: 1px solid #dddddd; padding-top: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                © 2026 Sistema de Reservas de Parqueadero. Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
