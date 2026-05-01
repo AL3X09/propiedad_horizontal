@@ -13,7 +13,7 @@ async def close_tortoise():
 
 
 TORTOISE_ORM = {
-    "connections": {"default": settings.DB_URL},
+    "connections": {"default": settings.DATABASE_URL},
     "apps": {
         "models": {
             "models": [

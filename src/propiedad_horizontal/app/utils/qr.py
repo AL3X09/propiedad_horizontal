@@ -335,7 +335,7 @@ def generate_reservation_email_html(
 
                 <!-- CTA -->
                 <div style="text-align: center;">
-                    <a href="{settings.API_URL or 'http://localhost:8000'}/parking" class="cta-button">
+                    <a href="{ str(settings.APP_HOST) + ":" + str(settings.APP_PORT) or "http://localhost:8001"}/parking" class="cta-button">
                         Ver Mis Reservas
                     </a>
                 </div>

@@ -372,7 +372,7 @@ async def send_reservation_qr(reservation: VisitorReservation):
     """
     try:
         # Obtener URL base de la API
-        base_url = settings.API_URL or "http://localhost:8000"
+        base_url = str(settings.APP_HOST) + ":" + str(settings.APP_PORT) or "http://localhost:8001"
         
         # Generar QR como base64 (embebido en HTML, no adjunto)
         qr_base64 = generate_qr_base64(
