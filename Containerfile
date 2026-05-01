@@ -4,7 +4,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR='/tmp/poetry_cache'
+    # Añadimos /app al path para que Python encuentre tus módulos
+    PYTHONPATH=/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
@@ -12,23 +13,20 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# 1. Instalar Poetry
-RUN pip install --no-cache-dir poetry
-
-# 2. Clonar el repositorio
+# Clonar el repositorio
 RUN git clone https://github.com/AL3X09/propiedad_horizontal.git .
 
-# 3. Instalar dependencias usando Poetry
-# Nota: Esto instalará python-multipart si ya lo agregaste con 'poetry add'
-RUN poetry install --no-root --without dev \
-    && pip install --no-cache-dir asyncpg \
-    && rm -rf $POETRY_CACHE_DIR
+# Instalar poetry y dependencias
+RUN pip install --no-cache-dir poetry
+RUN poetry install --no-root --without dev
 
-# Exponer el puerto
+# IMPORTANTE: Instalar el proyecto actual en modo editable o como paquete
+# Esto registra "propiedad_horizontal" en los site-packages de Python
+RUN pip install -e .
+
+RUN pip install --no-cache-dir asyncpg
+
 EXPOSE 8001
 
-# Comando de ejecución
-# Usamos "python -m uvicorn" para asegurarnos de que se ejecute con el entorno de Poetry
-#CMD ["uvicorn", "propiedad_horizontal.app.main:app", \
-##    "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+# Ajustamos el CMD para asegurarnos de que llame al módulo correctamente
 CMD ["python", "-m", "uvicorn", "propiedad_horizontal.app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
