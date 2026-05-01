@@ -19,7 +19,8 @@ dependencies = [
     "argon2-cffi (>=25.1.0,<26.0.0)",
     "debugpy (>=1.8.19,<2.0.0)",
     "qrcode (>=7.3,<8.0)",
-    "httpx (>=0.28.1,<0.29.0)"
+    "httpx (>=0.28.1,<0.29.0)",
+    "python-multipart (>=0.0.27,<0.0.28)"
 ]
 
 [tool.poetry]
