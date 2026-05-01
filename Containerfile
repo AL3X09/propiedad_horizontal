@@ -28,5 +28,7 @@ RUN poetry install --no-root --without dev \
 EXPOSE 8001
 
 # Comando de ejecución
-CMD ["uvicorn", "propiedad_horizontal.app.main:app", \
-     "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+# Usamos "python -m uvicorn" para asegurarnos de que se ejecute con el entorno de Poetry
+#CMD ["uvicorn", "propiedad_horizontal.app.main:app", \
+##    "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+CMD ["python", "-m", "uvicorn", "propiedad_horizontal.app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
