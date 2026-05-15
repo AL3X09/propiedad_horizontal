@@ -29,4 +29,8 @@ RUN pip install --no-cache-dir asyncpg
 EXPOSE 8001
 
 # Ajustamos el CMD para asegurarnos de que llame al módulo correctamente
-CMD ["python", "-m", "uvicorn", "propiedad_horizontal.app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+#CMD ["python", "-m", "uvicorn", "propiedad_horizontal.app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["gunicorn", "propiedad_horizontal.app.main:app", \
+     "--workers", "2", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8001"]
