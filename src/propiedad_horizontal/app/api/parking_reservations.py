@@ -132,7 +132,10 @@ async def scan_qr_endpoint(reservation_id: int, token: str = Query(..., min_leng
 
 @router.post("/{reservation_id}/cancel", status_code=204, dependencies=[Depends(require_permissions(["reservas:write"]))])
 async def cancel_reservation_endpoint(reservation_id: int):
-    ok = await cancel_reservation(reservation_id)
+    try:
+        ok = await cancel_reservation(reservation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not ok:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     return None

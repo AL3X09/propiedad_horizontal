@@ -6,7 +6,7 @@ class Role(models.Model):
     name = fields.CharField(max_length=50, unique=True, index=True)
     description = fields.CharField(max_length=255, null=True)
 
-    #permissions = fields.ManyToManyField("models.Permission", related_name="roles") se movió a Permission para evitar circularidad
+    #permissions = fields.ManyToManyField("models.Permission", related_name="roles") #se movió a Permission para evitar circularidad
     users = fields.ReverseRelation["User"]
 
     created_at = fields.DatetimeField(auto_now_add=True)

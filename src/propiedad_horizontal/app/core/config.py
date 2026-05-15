@@ -1,6 +1,6 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -17,13 +17,41 @@ class Settings(BaseSettings):
     # ============================================================
     DATABASE_URL: str = Field(...)
 
-    DB_HOST: str = Field(...)
-    DB_PORT: int = Field(...)
-    DB_NAME: str = Field(...)
-    DB_USER: str = Field(...)
-    DB_PASSWORD: str = Field(...)
-    
-    
+    # Opcionales: solo requeridos cuando el engine es postgres/mysql
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[int] = None
+    DB_NAME: Optional[str] = None
+    DB_USER: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_db_fields(self) -> "Settings":
+        """
+        Si DATABASE_URL es de postgres o mysql, exige los campos DB_*.
+        Si es sqlite, los ignora completamente.
+        """
+        url = self.DATABASE_URL.lower()
+        if url.startswith("sqlite"):
+            return self  # nada que validar
+
+        missing = [
+            field
+            for field, val in {
+                "DB_HOST": self.DB_HOST,
+                "DB_PORT": self.DB_PORT,
+                "DB_NAME": self.DB_NAME,
+                "DB_USER": self.DB_USER,
+                "DB_PASSWORD": self.DB_PASSWORD,
+            }.items()
+            if val is None
+        ]
+        if missing:
+            raise ValueError(
+                f"Los siguientes campos son requeridos cuando DATABASE_URL "
+                f"no es sqlite: {', '.join(missing)}"
+            )
+        return self
+
     # ============================================================
     # Tortoise ORM
     # ============================================================
@@ -70,9 +98,11 @@ class Settings(BaseSettings):
     # CONFIGURACIÓN PYDANTIC
     # ============================================================
     model_config = SettingsConfigDict(
-        env_file=".env",       # ← se fuerza el archivo
-        env_file_encoding="utf-8"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",          # ← ignora DB_ENGINE y cualquier extra del .env
     )
+
 
 # Timezone global para la aplicación (Bogotá, Colombia)
 APP_TIMEZONE = "America/Bogota"

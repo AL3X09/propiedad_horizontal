@@ -225,3 +225,5 @@ __marimo__/
 .db.*
 #test
 tests/
+# Windows shortcut files
+*.Zone.Identifier

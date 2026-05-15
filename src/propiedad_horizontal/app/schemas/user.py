@@ -21,7 +21,7 @@ class UserRead(BaseModel):
     role: RoleRead
     must_change_password: bool
     password_changed_at: Optional[datetime] = None
-    permissions: List[str] = Field(default_factory=list)
+    #permissions: List[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

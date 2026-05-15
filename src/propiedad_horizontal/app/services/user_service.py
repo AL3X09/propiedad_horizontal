@@ -62,11 +62,11 @@ async def update_user(user_id: int, data: UserUpdate) -> Optional[User]:
         user.password_changed_at = None
 
     await user.save()
-    return user
+    return await User.filter(id=user_id).prefetch_related("role", "role__permissions").first()
 
 
 async def get_user(user_id: int) -> Optional[User]:
-    return await User.get_or_none(id=user_id).prefetch_related("role", "role__permissions")
+    return await User.filter(id=user_id).prefetch_related("role", "role__permissions").first()
 
 async def list_users(limit: int = 50, offset: int = 0) -> List[User]:
     return (
@@ -83,7 +83,7 @@ async def delete_user(user_id: int) -> bool:
     return deleted > 0
 
 async def authenticate(username: str, password: str) -> Optional[User]:
-    user = await User.get_or_none(username=username).prefetch_related("role", "role__permissions")
+    user = await User.filter(username=username).prefetch_related("role", "role__permissions").first()
     if not user or not verify_password(password, user.password_hash):
         return None
     return user

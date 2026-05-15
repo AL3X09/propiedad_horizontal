@@ -69,7 +69,7 @@ async def update_user_via_put_endpoint(user_id: int, payload: UserUpdate):
     return await to_user_read(user)
 
 # ----------------- ELIMINAR -----------------
-@router.delete("/{user_id}", status_code=204, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.delete("/NO/{user_id}", status_code=204, dependencies=[Depends(require_permissions(["users:write"]))])
 async def delete_user_endpoint(user_id: int):
     ok = await delete_user(user_id)
     if not ok:

@@ -577,6 +577,8 @@ async def cancel_reservation(reservation_id: int) -> bool:
     r = await VisitorReservation.get_or_none(id=reservation_id)
     if not r:
         return False
+    if r.status != ReservationStatus.ACTIVE:
+        raise ValueError("Solo se puede cancelar una reserva activa")
     r.status = ReservationStatus.CANCELLED
     await r.save()
     return True
