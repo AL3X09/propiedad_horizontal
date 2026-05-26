@@ -35,7 +35,7 @@ async def update_my_persona(payload: PersonaUpdate, current_user: User = Depends
     persona = await update_persona(items[0].id, payload)
     return PersonaRead.model_validate(persona)
 
-@router.get("/", response_model=list[PersonaRead], dependencies=[Depends(require_permissions(["person:read"]))])
+@router.get("", response_model=list[PersonaRead], dependencies=[Depends(require_permissions(["person:read"]))])
 async def list_personas_endpoint(
     # CORRECCIÓN: Ahora filtra por link (casa-torre) en lugar de casa/apartamento
     casa_interior_link_id: Optional[int] = None,
@@ -64,7 +64,7 @@ async def get_persona_endpoint(persona_id: int):
         raise HTTPException(status_code=404, detail="Persona no encontrada")
     return PersonaRead.model_validate(p)
 
-@router.post("/", response_model=PersonaRead, status_code=201, dependencies=[Depends(require_permissions(["person:write"]))])
+@router.post("", response_model=PersonaRead, status_code=201, dependencies=[Depends(require_permissions(["person:write"]))])
 async def create_persona_endpoint(payload: PersonaCreate):
     try:
         p = await create_persona(payload)

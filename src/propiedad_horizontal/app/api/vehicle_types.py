@@ -20,7 +20,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(prefix="/parking/vehicle-types", tags=["vehicle-types"])
 
 
-@router.get("/", response_model=list[VehicleTypeRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[VehicleTypeRead], dependencies=[Depends(require_permissions(["parking:read"]))])
 async def list_vehicle_types_endpoint(
     include_inactive: bool = Query(False, description="Incluir tipos inactivos"),
     limit: int = Query(100, ge=1, le=500),
@@ -52,7 +52,7 @@ async def get_vehicle_type_endpoint(vt_id: int):
     return VehicleTypeRead.model_validate(vt)
 
 
-@router.post("/", response_model=VehicleTypeRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("", response_model=VehicleTypeRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
 async def create_vehicle_type_endpoint(payload: VehicleTypeCreate):
     try:
         vt = await create_vehicle_type(payload)

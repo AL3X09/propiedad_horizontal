@@ -13,7 +13,7 @@ router = APIRouter(prefix="/permissions", tags=["permissions"])
 # - permissions:read
 # - permissions:write
 
-@router.get("/", response_model=list[PermissionRead], dependencies=[Depends(require_permissions(["permissions:read"]))])
+@router.get("", response_model=list[PermissionRead], dependencies=[Depends(require_permissions(["permissions:read"]))])
 async def list_permissions_endpoint(
     q: str | None = None,
     limit: int = Query(100, ge=1, le=500),
@@ -29,7 +29,7 @@ async def get_permission_endpoint(permission_id: int):
         raise HTTPException(status_code=404, detail="Permiso no encontrado")
     return PermissionRead.model_validate(perm)
 
-@router.post("/", response_model=PermissionRead, status_code=201, dependencies=[Depends(require_permissions(["permissions:write"]))])
+@router.post("", response_model=PermissionRead, status_code=201, dependencies=[Depends(require_permissions(["permissions:write"]))])
 async def create_permission_endpoint(payload: PermissionCreate):
     try:
         perm = await create_permission(payload)

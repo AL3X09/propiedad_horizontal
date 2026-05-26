@@ -12,7 +12,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/casa-interior-links", tags=["casa-interior-links"])
 #vinculosinteriorcasa
-@router.get("/", response_model=list[CasaInteriorLinkRead], dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
+@router.get("", response_model=list[CasaInteriorLinkRead], dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
 async def list_links_endpoint(
     casa_apartamento_id: Optional[int] = None,
     torre_interior_id: Optional[int] = None,
@@ -59,7 +59,7 @@ async def get_casaapartamento_id_endpoint(id_casa_apto: int):
         raise HTTPException(status_code=404, detail="relación casa/apto no encontrada")
     return tc_id
 
-@router.post("/", response_model=CasaInteriorLinkRead, status_code=201, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:write"]))])
+@router.post("", response_model=CasaInteriorLinkRead, status_code=201, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:write"]))])
 async def create_link_endpoint(payload: CasaInteriorLinkCreate):
     try:
         i = await create_link(payload)

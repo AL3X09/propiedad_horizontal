@@ -20,7 +20,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
-@router.get("/", response_model=list[VehicleRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[VehicleRead], dependencies=[Depends(require_permissions(["parking:read"]))])
 async def list_vehicles_endpoint(
     persona_id: int | None = Query(None, description="Filtrar por persona"),
     vehicle_type_id: int | None = Query(None, description="Filtrar por tipo de vehículo"),
@@ -60,7 +60,7 @@ async def get_vehicle_endpoint(vehicle_id: int):
     return VehicleRead.model_validate(vehicle)
 
 
-@router.post("/", response_model=VehicleRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("", response_model=VehicleRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
 async def create_vehicle_endpoint(payload: VehicleCreate):
     """
     Crea un nuevo vehículo.

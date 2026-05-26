@@ -13,7 +13,7 @@ from propiedad_horizontal.app.models.casa_apartamento_interior_torre import Casa
 router = APIRouter(prefix="/parking/reservations", tags=["parking-reservations"])
 
 # ---- ENDPOINTS PROTEGIDOS ----
-@router.get("/", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
+@router.get("", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
 async def list_reservations_endpoint(limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)):
     reservations = await list_reservations(limit=limit, offset=offset)
     out = []
@@ -56,7 +56,7 @@ async def get_reservations_by_user_id_endpoint(user_id: int):
         out.append(dto)
     return out
 
-@router.post("/", response_model=VisitorReservationRead, status_code=201, dependencies=[Depends(require_permissions(["reservas:write"]))])
+@router.post("", response_model=VisitorReservationRead, status_code=201, dependencies=[Depends(require_permissions(["reservas:write"]))])
 async def create_reservation_endpoint(payload: VisitorReservationCreate, background_tasks: BackgroundTasks):
     try:
         spot = None

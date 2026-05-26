@@ -15,7 +15,7 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 # - roles:read
 # - roles:write
 
-@router.get("/", response_model=list[RoleRead], dependencies=[Depends(require_permissions(["roles:read"]))])
+@router.get("", response_model=list[RoleRead], dependencies=[Depends(require_permissions(["roles:read"]))])
 async def list_roles_endpoint(
     q: str | None = None,
     limit: int = Query(100, ge=1, le=500),
@@ -33,7 +33,7 @@ async def get_role_endpoint(role_id: int):
     return RoleRead.model_validate(role)
 
 
-@router.post("/", response_model=RoleRead, status_code=201, dependencies=[Depends(require_permissions(["roles:write"]))])
+@router.post("", response_model=RoleRead, status_code=201, dependencies=[Depends(require_permissions(["roles:write"]))])
 async def create_role_endpoint(payload: RoleCreate):
     try:
         role = await create_role(payload)

@@ -12,7 +12,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(prefix="/torres-interiores", tags=["torres-interiores"])
 
 #@router.get("/", response_model=list[TorreInteriorRead], dependencies=[Depends(require_permissions(["tower_interior:read"]))])
-@router.get("/", response_model=list[TorreInteriorRead])
+@router.get("", response_model=list[TorreInteriorRead], dependencies=[Depends(require_permissions(["tower_interior:read"]))])
 async def list_torres_interiores_endpoint(
     q: Optional[str] = None,
     active_only: bool = True,
@@ -37,7 +37,7 @@ async def get_torre_interior_endpoint(torre_interior_id: int):
     return TorreInteriorRead.model_validate(ti)
 
 
-@router.post("/", response_model=TorreInteriorRead, status_code=201, dependencies=[Depends(require_permissions(["tower_interior:write"]))])
+@router.post("", response_model=TorreInteriorRead, status_code=201, dependencies=[Depends(require_permissions(["tower_interior:write"]))])
 async def create_torre_interior_endpoint(payload: TorreInteriorCreate):
     try:
         ti = await create_torre_interior(payload)

@@ -8,7 +8,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/parking/spots", tags=["parking-spots"])
 
-@router.get("/", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parking:read"]))])
 async def list_spots_endpoint(
     vehicle_type_id: int | None = None,
     parking_status : ParkingSpotStatus | None = None,
@@ -59,7 +59,7 @@ async def list_spot_disponible(
         out.append(dto)
     return out
 
-@router.post("/", response_model=ParkingSpotRead, status_code=201)
+@router.post("", response_model=ParkingSpotRead, status_code=201)
 async def create_spot_endpoint(payload: ParkingSpotCreate):
     try:
         spot = await create_spot(payload)

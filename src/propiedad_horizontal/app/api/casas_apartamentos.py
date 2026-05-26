@@ -11,7 +11,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/casas-apartamentos", tags=["casas-apartamentos"])
 
-@router.get("/", response_model=list[CasaApartamentoRead])
+@router.get("", response_model=list[CasaApartamentoRead], dependencies=[Depends(require_permissions(["house_apartment:read"]))])
 async def list_casas_apartamentos_endpoint(
     q: Optional[str] = None,
     active_only: bool = True,
@@ -35,7 +35,7 @@ async def get_c_numero_letra_id_endpoint(c_numero_letra: str):
         raise HTTPException(status_code=404, detail="Casa o apartamento no encontrada")
     return c_id
 
-@router.post("/", response_model=CasaApartamentoRead, status_code=201, dependencies=[Depends(require_permissions(["house_apartment:write"]))])
+@router.post("", response_model=CasaApartamentoRead, status_code=201, dependencies=[Depends(require_permissions(["house_apartment:write"]))])
 async def create_casa_apartamento_endpoint(payload: CasaApartamentoCreate):
     try:
         i = await create_casa_apartamento(payload)

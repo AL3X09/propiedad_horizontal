@@ -7,7 +7,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 #asignar 1–6 meses, cancelar, listar)
 router = APIRouter(prefix="/parking/assignments", tags=["parking-assignments"])
 
-@router.get("/", response_model=list[MonthlyAssignmentRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[MonthlyAssignmentRead], dependencies=[Depends(require_permissions(["parking:read"]))])
 async def list_assignments_endpoint(limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)):
     assignments = await list_assignments(limit=limit, offset=offset)
     out = []
@@ -28,7 +28,7 @@ async def get_assignment_endpoint(assignment_id: int):
     dto.vehicle_type_id = a.vehicle_type_id
     return dto
 
-@router.post("/", response_model=MonthlyAssignmentRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("", response_model=MonthlyAssignmentRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
 async def create_assignment_endpoint(payload: MonthlyAssignmentCreate):
     try:
         a = await create_monthly_assignment(payload)
