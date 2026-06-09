@@ -18,7 +18,7 @@ async def read_me(current_user=Depends(get_current_user)):
     return await to_user_read(current_user)
 
 # ----------------- LISTAR -----------------
-@router.get("/", response_model=list[UserRead], dependencies=[Depends(require_permissions(["users:read"]))])
+@router.get("", response_model=list[UserRead], dependencies=[Depends(require_permissions(["users:read"]))])
 async def list_users_endpoint(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)):
     users = await list_users(limit=limit, offset=offset)
     out: list[UserRead] = []
@@ -35,7 +35,7 @@ async def get_user_endpoint(user_id: int):
     return await to_user_read(user)
 
 # ----------------- CREAR -----------------
-@router.post("/", response_model=UserRead, status_code=201, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.post("", response_model=UserRead, status_code=201, dependencies=[Depends(require_permissions(["users:write"]))])
 async def create_user_endpoint(payload: UserCreate):
     try:
         user = await create_user(payload)

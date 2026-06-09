@@ -20,6 +20,8 @@ TORTOISE_ORM = {
                 "propiedad_horizontal.app.models.user",
                 "propiedad_horizontal.app.models.role",
                 "propiedad_horizontal.app.models.permission",
+                "propiedad_horizontal.app.models.bien",
+                "propiedad_horizontal.app.models.trasteo",
                 "propiedad_horizontal.app.models.parking",
                 "propiedad_horizontal.app.models.parking_assignment",
                 "propiedad_horizontal.app.models.parking_reservation",

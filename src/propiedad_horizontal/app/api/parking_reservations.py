@@ -11,8 +11,6 @@ from propiedad_horizontal.app.models.vehicle_type import VehicleType
 from propiedad_horizontal.app.models.casa_apartamento_interior_torre import CasaApartamentoInteriorTorre
 
 router = APIRouter(prefix="/parking/reservations", tags=["parking-reservations"])
-
-# ---- ENDPOINTS PROTEGIDOS ----
 @router.get("", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
 async def list_reservations_endpoint(limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)):
     reservations = await list_reservations(limit=limit, offset=offset)

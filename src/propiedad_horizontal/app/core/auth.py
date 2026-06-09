@@ -88,16 +88,16 @@ def require_permissions(required: list[str]):
         if not payload:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
         
-        # Permitir tokens anónimos solo para parking:write
+        # Permitir tokens anónimos solo para crear reservas (reservas:write)
         if payload.get("sub") == "anonymous":
-            if "parking:write" not in required:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permisos insuficientes para token anónimo")
-            # Validar IP matches
-            client_ip = request.client.host if request else None
-            if payload.get("ip") != client_ip:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP mismatch")
+            if "reservas:write" in required:
+                return None  # ✅ tiene permiso para crear reserva
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permisos insuficientes para token anónimo"
+                )
             # Retornar un usuario dummy o None, ya que no hay usuario real
-            return None
+            #return None
         
         # Lógica normal para usuarios autenticados
         sub = payload.get("sub")

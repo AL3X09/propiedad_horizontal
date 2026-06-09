@@ -34,7 +34,7 @@ async def _enforce_single_owner(link_id: int, exclude_persona_id: Optional[int] 
     if exclude_persona_id is not None:
         qs = qs.exclude(id=exclude_persona_id)
     if await qs.exists():
-        raise ValueError("Ya existe un propietario activo para este link.")
+        raise ValueError("Ya existe un propietario activo para esa relación entre interior/casa.")
 
 # CORRECCIÓN: La regla de único arrendatario ahora aplica por link (casa-torre)
 async def _enforce_single_tenant(link_id: int, exclude_persona_id: Optional[int] = None) -> None:
@@ -45,7 +45,7 @@ async def _enforce_single_tenant(link_id: int, exclude_persona_id: Optional[int]
     if exclude_persona_id is not None:
         qs = qs.exclude(id=exclude_persona_id)
     if await qs.exists():
-        raise ValueError("Ya existe un arrendatario activo para este link.")
+        raise ValueError("Ya existe un arrendatario activo para esa relación entre interior/casa.")
 
 async def create_persona(data: PersonaCreate) -> Persona:
     # CORRECCIÓN: Se valida el link en lugar de la casa directamente

@@ -21,6 +21,8 @@ from propiedad_horizontal.app.api.roles import router as roles_router
 from propiedad_horizontal.app.api.parking_lottery import router as parking_lottery_router
 from propiedad_horizontal.app.api.vehicle_types import router as vehicle_types_router
 from propiedad_horizontal.app.api.vehicles import router as vehicles_router
+from propiedad_horizontal.app.api.bienes import router as bienes_router
+from propiedad_horizontal.app.api.trasteos import router as trasteos_router
 from propiedad_horizontal.app.api.public import router as public_router
 from propiedad_horizontal.app.api.notifications import router as notifications_router
 
@@ -74,6 +76,8 @@ def create_app() -> FastAPI:
     app.include_router(parking_lottery_router)
     app.include_router(vehicle_types_router)
     app.include_router(vehicles_router)
+    app.include_router(bienes_router)
+    app.include_router(trasteos_router)
     app.include_router(public_router)
     app.include_router(notifications_router)
 
