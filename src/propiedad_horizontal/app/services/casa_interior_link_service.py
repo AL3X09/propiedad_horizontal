@@ -59,6 +59,18 @@ async def get_torrecasa_id(id_casa_apto: int, id_interior_torre: int) -> Optiona
     )
     return obj.id if obj else None
 
+async def get_link_id_by_torre(id_interior_torre: int) -> Optional[int]:
+    obj = await CasaApartamentoInteriorTorre.get_or_none(
+        torre_interior_id=id_interior_torre
+    )
+    return obj.id if obj else None
+
+async def get_link_id_by_casa(id_casa_apto: int) -> Optional[int]:
+    obj = await CasaApartamentoInteriorTorre.get_or_none(
+        casa_apartamento_id=id_casa_apto
+    )
+    return obj.id if obj else None
+
 async def update_link(link_id: int, data: CasaInteriorLinkUpdate) -> Optional[CasaApartamentoInteriorTorre]:
     link = await CasaApartamentoInteriorTorre.get_or_none(id=link_id)
     if not link:

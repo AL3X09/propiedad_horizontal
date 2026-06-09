@@ -46,7 +46,7 @@ def generate_qr_image(reservation_id: Union[int, str], token: str, base: Union[s
     data = generate_qr_url(reservation_id, token, base)
     img = qrcode.make(data)
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf, "PNG")
     return buf.getvalue()
 
 

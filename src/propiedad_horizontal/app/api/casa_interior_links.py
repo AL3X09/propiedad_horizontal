@@ -5,7 +5,7 @@ from propiedad_horizontal.app.schemas.casa_interior_link import (
     CasaInteriorLinkCreate, CasaInteriorLinkUpdate, CasaInteriorLinkRead
 )
 from propiedad_horizontal.app.services.casa_interior_link_service import (
-    create_link, get_torrecasa_id, list_links, get_link, update_link, deactivate_link
+    create_link, get_torrecasa_id, get_link_id_by_torre, get_link_id_by_casa, list_links, get_link, update_link, deactivate_link
 )
 from propiedad_horizontal.app.domain.enums import ApartmentStatus
 from propiedad_horizontal.app.core.auth import require_permissions
@@ -45,16 +45,16 @@ async def get_interiortorre_id_endpoint(id_casa_apto: int, id_interior_torre: in
         raise HTTPException(status_code=404, detail="relación torre/interior casa/apto no encontrada")
     return tc_id
 
-@router.get("/{interiortorre}/id", response_model=int, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
-async def get_interiortorre_id_endpoint(id_interior_torre: int):
-    tc_id = await get_torrecasa_id(id_interior_torre)
+@router.get("/by-interior_torre/{id_interior_torre}", response_model=int, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
+async def get_by_torre_id_endpoint(id_interior_torre: int):
+    tc_id = await get_link_id_by_torre(id_interior_torre)
     if tc_id is None:
         raise HTTPException(status_code=404, detail="relación torre/interior no encontrada")
     return tc_id
 
-@router.get("/{casaapartamento}/id", response_model=int, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
-async def get_casaapartamento_id_endpoint(id_casa_apto: int):
-    tc_id = await get_torrecasa_id(id_casa_apto)
+@router.get("/by-casa_apto/{id_casa_apto}", response_model=int, dependencies=[Depends(require_permissions(["vinculosinteriorcasa:read"]))])
+async def get_by_casa_id_endpoint(id_casa_apto: int):
+    tc_id = await get_link_id_by_casa(id_casa_apto)
     if tc_id is None:
         raise HTTPException(status_code=404, detail="relación casa/apto no encontrada")
     return tc_id
