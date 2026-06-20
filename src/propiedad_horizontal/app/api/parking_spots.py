@@ -8,7 +8,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/parking/spots", tags=["parking-spots"])
 
-@router.get("", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parqueaderos:read"]))])
 async def list_spots_endpoint(
     vehicle_type_id: int | None = None,
     parking_status : ParkingSpotStatus | None = None,
@@ -25,7 +25,7 @@ async def list_spots_endpoint(
         out.append(dto)
     return out
 
-@router.get("/disponibles", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("/disponibles", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parqueaderos:read"]))])
 async def list_spot_disponible(
     vehicle_type_id: int,
     parking_status : ParkingSpotStatus,
@@ -42,7 +42,7 @@ async def list_spot_disponible(
         out.append(dto)
     return out
 
-@router.get("/disponibles/publicos", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("/disponibles/publicos", response_model=list[ParkingSpotRead], dependencies=[Depends(require_permissions(["parqueaderos:read"]))])
 async def list_spot_disponible(
     vehicle_type_id: int,
     parking_status : ParkingSpotStatus,
@@ -69,7 +69,7 @@ async def create_spot_endpoint(payload: ParkingSpotCreate):
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.patch("/{spot_id}", response_model=ParkingSpotRead, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.patch("/{spot_id}", response_model=ParkingSpotRead, dependencies=[Depends(require_permissions(["parqueaderos:write"]))])
 async def update_spot_endpoint(spot_id: int, payload: ParkingSpotUpdate):
     spot = await update_spot(spot_id, payload)
     if not spot:
@@ -78,7 +78,7 @@ async def update_spot_endpoint(spot_id: int, payload: ParkingSpotUpdate):
     dto.vehicle_type_id = spot.vehicle_type_id
     return dto
 
-@router.post("/{spot_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("/{spot_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["parqueaderos:write"]))])
 async def deactivate_spot_endpoint(spot_id: int):
     ok = await deactivate_spot(spot_id)
     if not ok:

@@ -375,7 +375,7 @@ async def send_reservation_qr(reservation: VisitorReservation):
         base_url = str(settings.APP_HOST) + ":" + str(settings.APP_PORT) or "http://localhost:8001"
         
         # Generar QR como base64 (embebido en HTML, no adjunto)
-        qr_base64 = generate_qr_base64(
+        qr_base64 = await generate_qr_base64(
             reservation_id=reservation.id,
             token=reservation.qr_token,
             base=base_url
@@ -424,7 +424,7 @@ async def send_reservation_qr(reservation: VisitorReservation):
             html_content=html_body,
         )
         
-        # Enviar email via servicio de notificaciones (API REST)
+        # Enviar sms via servicio de notificaciones (API REST)
         await notification_client.enviar_sms(
             message_body=f"Fontibon reservardo te da la bienvenida, {reservation.visitor_name}, todo el proceso llegara al correo que registraste.",
             to_number=f"+57{reservation.visitor_cell}",
@@ -433,7 +433,7 @@ async def send_reservation_qr(reservation: VisitorReservation):
     except Exception as e:
         # Loguear error sin bloquear la ejecución
         import sys
-        print(f"Error al enviar email de reserva {reservation.id}: {str(e)}", file=sys.stderr)
+        print(f"Error al enviar email o sms de reserva {reservation.id}: {str(e)}", file=sys.stderr)
         # En producción, considera usar un logger apropiado aquí
 
 

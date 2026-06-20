@@ -34,7 +34,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(
     prefix="/parking/lottery",
     tags=["parking-lottery"],
-    dependencies=[Depends(require_permissions(["parking:lottery:read"]))]
+    dependencies=[Depends(require_permissions(["loteriaparqueadero:read"]))]
 )
 
 
@@ -60,7 +60,7 @@ async def get_config(config_id: int):
     return config
 
 
-@router.post("/configs", response_model=LotteryConfigRead, status_code=201, dependencies=[Depends(require_permissions(["parking:lottery:write"]))])
+@router.post("/configs", response_model=LotteryConfigRead, status_code=201, dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def create_config(
     payload: LotteryConfigCreate,
 ):
@@ -77,7 +77,7 @@ async def create_config(
     return config
 
 
-@router.patch("/configs/{config_id}", response_model=LotteryConfigRead, dependencies=[Depends(require_permissions(["parking:lottery:write"]))])
+@router.patch("/configs/{config_id}", response_model=LotteryConfigRead, dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def update_config(
     config_id: int,
     payload: LotteryConfigUpdate,
@@ -133,7 +133,7 @@ async def get_round_participants(round_id: int):
 
 # ==================== Ejecución del Lottery ====================
 
-@router.post("/execute", response_model=LotteryExecuteResponse, dependencies=[Depends(require_permissions(["parking:lottery:execute"]))])
+@router.post("/execute", response_model=LotteryExecuteResponse, dependencies=[Depends(require_permissions(["loteriaparqueadero:execute"]))])
 async def execute_lottery(
     payload: LotteryExecuteRequest,
 ):
@@ -176,7 +176,7 @@ async def get_resident_behavior(persona_id: int):
     return behavior
 
 
-@router.patch("/residents/{persona_id}/behavior", response_model=ResidentBehaviorRead, dependencies=[Depends(require_permissions(["parking:lottery:write"]))])
+@router.patch("/residents/{persona_id}/behavior", response_model=ResidentBehaviorRead, dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def update_resident_behavior(
     persona_id: int,
     payload: ResidentBehaviorUpdate,
@@ -189,7 +189,7 @@ async def update_resident_behavior(
     return behavior
 
 
-@router.post("/residents/{persona_id}/warning", dependencies=[Depends(require_permissions(["parking:lottery:write"]))])
+@router.post("/residents/{persona_id}/warning", dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def add_warning(
     persona_id: int,
     warning_type: str = Query(..., description="Tipo: leve, moderado, grave"),
@@ -209,7 +209,7 @@ async def add_warning(
     return {"message": "Llamado de atención registrado", "warning_id": warning.id}
 
 
-@router.patch("/residents/{persona_id}/payment-status", dependencies=[Depends(require_permissions(["parking:lottery:write"]))])
+@router.patch("/residents/{persona_id}/payment-status", dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def update_payment_status(
     persona_id: int,
     is_compliant: bool = Query(..., description="True si está al día, False si no"),
@@ -225,7 +225,7 @@ async def update_payment_status(
 
 # ==================== Verificación de Elegibilidad ====================
 
-@router.get("/residents/{persona_id}/eligibility")
+@router.get("/residents/{persona_id}/eligibility", dependencies=[Depends(require_permissions(["loteriaparqueadero:write"]))])
 async def check_eligibility(
     persona_id: int,
     config_id: Optional[int] = Query(None, description="ID de configuración (opcional)")

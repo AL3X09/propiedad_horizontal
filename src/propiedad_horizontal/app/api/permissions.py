@@ -13,7 +13,7 @@ router = APIRouter(prefix="/permissions", tags=["permissions"])
 # - permissions:read
 # - permissions:write
 
-@router.get("", response_model=list[PermissionRead], dependencies=[Depends(require_permissions(["permissions:read"]))])
+@router.get("", response_model=list[PermissionRead], dependencies=[Depends(require_permissions(["permisos:read"]))])
 async def list_permissions_endpoint(
     q: str | None = None,
     limit: int = Query(100, ge=1, le=500),
@@ -22,14 +22,14 @@ async def list_permissions_endpoint(
     perms = await list_permissions(q=q, limit=limit, offset=offset)
     return [PermissionRead.model_validate(p) for p in perms]
 
-@router.get("/{permission_id}", response_model=PermissionRead, dependencies=[Depends(require_permissions(["permissions:read"]))])
+@router.get("/{permission_id}", response_model=PermissionRead, dependencies=[Depends(require_permissions(["permisos:read"]))])
 async def get_permission_endpoint(permission_id: int):
     perm = await get_permission(permission_id)
     if not perm:
         raise HTTPException(status_code=404, detail="Permiso no encontrado")
     return PermissionRead.model_validate(perm)
 
-@router.post("", response_model=PermissionRead, status_code=201, dependencies=[Depends(require_permissions(["permissions:write"]))])
+@router.post("", response_model=PermissionRead, status_code=201, dependencies=[Depends(require_permissions(["permisos:write"]))])
 async def create_permission_endpoint(payload: PermissionCreate):
     try:
         perm = await create_permission(payload)
@@ -37,7 +37,7 @@ async def create_permission_endpoint(payload: PermissionCreate):
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.patch("/{permission_id}", response_model=PermissionRead, dependencies=[Depends(require_permissions(["permissions:write"]))])
+@router.patch("/{permission_id}", response_model=PermissionRead, dependencies=[Depends(require_permissions(["permisos:write"]))])
 async def update_permission_endpoint(permission_id: int, payload: PermissionUpdate):
     try:
         perm = await update_permission(permission_id, payload)
@@ -47,7 +47,7 @@ async def update_permission_endpoint(permission_id: int, payload: PermissionUpda
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.delete("/{permission_id}", status_code=204, dependencies=[Depends(require_permissions(["permissions:write"]))])
+@router.delete("/{permission_id}", status_code=204, dependencies=[Depends(require_permissions(["permisos:delete"]))])
 async def delete_permission_endpoint(permission_id: int):
     ok = await delete_permission(permission_id)
     if not ok:

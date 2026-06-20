@@ -25,6 +25,7 @@ from propiedad_horizontal.app.api.bienes import router as bienes_router
 from propiedad_horizontal.app.api.trasteos import router as trasteos_router
 from propiedad_horizontal.app.api.public import router as public_router
 from propiedad_horizontal.app.api.notifications import router as notifications_router
+from propiedad_horizontal.app.api.domain_config import router as domain_config_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,11 +34,15 @@ async def lifespan(app: FastAPI):
 
     from propiedad_horizontal.app.models.role import Role
     from propiedad_horizontal.app.models.user import User
+    from propiedad_horizontal.app.models.permission import Permission
     from propiedad_horizontal.app.models.vehicle_type import VehicleType
+    from propiedad_horizontal.app.models.bien import Bien
     
     await Role.seed_defaults()
     await User.seed_defaults()
+    await Permission.seed_defaults()
     await VehicleType.seed_defaults()             # 2. Seed (BD ya disponible)
+    await Bien.seed_defaults()
     
 
     yield  # ◀ la app corre aquí
@@ -80,6 +85,7 @@ def create_app() -> FastAPI:
     app.include_router(trasteos_router)
     app.include_router(public_router)
     app.include_router(notifications_router)
+    app.include_router(domain_config_router)
 
     return app
 

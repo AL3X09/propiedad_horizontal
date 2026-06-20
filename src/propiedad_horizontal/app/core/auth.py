@@ -88,9 +88,9 @@ def require_permissions(required: list[str]):
         if not payload:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
         
-        # Permitir tokens anónimos solo para crear reservas (reservas:write)
+        # Permitir tokens anónimos solo para crear reservas (reservaparqueaderos:write)
         if payload.get("sub") == "anonymous":
-            if "reservas:write" in required:
+            if "reservaparqueaderos:write" in required:
                 return None  # ✅ tiene permiso para crear reserva
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -118,4 +118,3 @@ def require_permissions(required: list[str]):
         
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permisos insuficientes")
     return _dep
-

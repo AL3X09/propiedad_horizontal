@@ -17,10 +17,10 @@ from propiedad_horizontal.app.services.vehicle_type_service import (
 from propiedad_horizontal.app.core.auth import require_permissions
 
 
-router = APIRouter(prefix="/parking/vehicle-types", tags=["vehicle-types"])
+router = APIRouter(prefix="/vehicle-types", tags=["vehicle-types"])
 
 
-@router.get("", response_model=list[VehicleTypeRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[VehicleTypeRead], dependencies=[Depends(require_permissions(["tipovehiculos:read"]))])
 async def list_vehicle_types_endpoint(
     include_inactive: bool = Query(False, description="Incluir tipos inactivos"),
     limit: int = Query(100, ge=1, le=500),
@@ -44,7 +44,7 @@ async def list_active_vehicle_types_endpoint():
     return [VehicleTypeRead.model_validate(vt) for vt in items]
 
 
-@router.get("/{vt_id}", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("/{vt_id}", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["tipovehiculos:read"]))])
 async def get_vehicle_type_endpoint(vt_id: int):
     vt = await get_vehicle_type(vt_id)
     if not vt:
@@ -52,7 +52,7 @@ async def get_vehicle_type_endpoint(vt_id: int):
     return VehicleTypeRead.model_validate(vt)
 
 
-@router.post("", response_model=VehicleTypeRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("", response_model=VehicleTypeRead, status_code=201, dependencies=[Depends(require_permissions(["tipovehiculos:write"]))])
 async def create_vehicle_type_endpoint(payload: VehicleTypeCreate):
     try:
         vt = await create_vehicle_type(payload)
@@ -61,7 +61,7 @@ async def create_vehicle_type_endpoint(payload: VehicleTypeCreate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.patch("/{vt_id}", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.patch("/{vt_id}", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["tipovehiculos:write"]))])
 async def update_vehicle_type_endpoint(vt_id: int, payload: VehicleTypeUpdate):
     vt = await update_vehicle_type(vt_id, payload)
     if not vt:
@@ -69,7 +69,7 @@ async def update_vehicle_type_endpoint(vt_id: int, payload: VehicleTypeUpdate):
     return VehicleTypeRead.model_validate(vt)
 
 
-@router.post("/{vt_id}/toggle", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("/{vt_id}/toggle", response_model=VehicleTypeRead, dependencies=[Depends(require_permissions(["tipovehiculos:write"]))])
 async def toggle_vehicle_type_endpoint(vt_id: int, payload: VehicleTypeToggle):
     vt = await toggle_vehicle_type(vt_id, payload.is_active)
     if not vt:
@@ -77,7 +77,7 @@ async def toggle_vehicle_type_endpoint(vt_id: int, payload: VehicleTypeToggle):
     return VehicleTypeRead.model_validate(vt)
 
 
-@router.delete("/{vt_id}", status_code=204, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.delete("/{vt_id}", status_code=204, dependencies=[Depends(require_permissions(["tipovehiculos:delete"]))])
 async def delete_vehicle_type_endpoint(vt_id: int):
     """
     Desactiva un tipo de vehículo (soft-delete).

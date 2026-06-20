@@ -12,7 +12,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(prefix="/torres-interiores", tags=["torres-interiores"])
 
 #@router.get("/", response_model=list[TorreInteriorRead], dependencies=[Depends(require_permissions(["tower_interior:read"]))])
-@router.get("", response_model=list[TorreInteriorRead], dependencies=[Depends(require_permissions(["tower_interior:read"]))])
+@router.get("", response_model=list[TorreInteriorRead], dependencies=[Depends(require_permissions(["torreinteriores:read"]))])
 async def list_torres_interiores_endpoint(
     q: Optional[str] = None,
     active_only: bool = True,
@@ -29,7 +29,7 @@ async def get_torre_interior_id_endpoint(num_torre_interior: str):
         raise HTTPException(status_code=404, detail="Torre o interior no encontrada")
     return ti_id
 
-@router.get("/{torre_interior_id}", response_model=TorreInteriorRead, dependencies=[Depends(require_permissions(["tower_interior:read"]))])
+@router.get("/{torre_interior_id}", response_model=TorreInteriorRead, dependencies=[Depends(require_permissions(["torreinteriores:read"]))])
 async def get_torre_interior_endpoint(torre_interior_id: int):
     ti = await get_torre_interior(torre_interior_id)
     if not ti:
@@ -37,7 +37,7 @@ async def get_torre_interior_endpoint(torre_interior_id: int):
     return TorreInteriorRead.model_validate(ti)
 
 
-@router.post("", response_model=TorreInteriorRead, status_code=201, dependencies=[Depends(require_permissions(["tower_interior:write"]))])
+@router.post("", response_model=TorreInteriorRead, status_code=201, dependencies=[Depends(require_permissions(["torreinteriores:write"]))])
 async def create_torre_interior_endpoint(payload: TorreInteriorCreate):
     try:
         ti = await create_torre_interior(payload)
@@ -45,7 +45,7 @@ async def create_torre_interior_endpoint(payload: TorreInteriorCreate):
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.patch("/{torre_interior_id}", response_model=TorreInteriorRead, dependencies=[Depends(require_permissions(["tower_interior:write"]))])
+@router.patch("/{torre_interior_id}", response_model=TorreInteriorRead, dependencies=[Depends(require_permissions(["torreinteriores:write"]))])
 async def update_torre_interior_endpoint(torre_interior_id: int, payload: TorreInteriorUpdate):
     try:
         ti = await update_torre_interior(torre_interior_id, payload)
@@ -55,7 +55,7 @@ async def update_torre_interior_endpoint(torre_interior_id: int, payload: TorreI
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.post("/{torre_interior_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["tower_interior:write"]))])
+@router.post("/{torre_interior_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["torreinteriores:write"]))])
 async def deactivate_torre_interior_endpoint(torre_interior_id: int):
     ok = await deactivate_torre_interior(torre_interior_id)
     if not ok:

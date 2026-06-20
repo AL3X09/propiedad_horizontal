@@ -7,7 +7,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/users", tags=["user-permissions"])
 
-@router.post("/{username}/permissions", response_model=UserRead, dependencies=[Depends(require_permissions(["permissions:write"]))])
+@router.post("/{username}/permissions", response_model=UserRead, dependencies=[Depends(require_permissions(["usuariopermisos:write"]))])
 async def set_user_permissions_endpoint(username: str, payload: UserPermissionsSet):
     try:
         user = await set_permissions_by_username(username, payload.permissions)

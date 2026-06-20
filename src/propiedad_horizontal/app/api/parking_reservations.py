@@ -11,7 +11,7 @@ from propiedad_horizontal.app.models.vehicle_type import VehicleType
 from propiedad_horizontal.app.models.casa_apartamento_interior_torre import CasaApartamentoInteriorTorre
 
 router = APIRouter(prefix="/parking/reservations", tags=["parking-reservations"])
-@router.get("", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
+@router.get("", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservaparqueaderos:read"]))])
 async def list_reservations_endpoint(limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)):
     reservations = await list_reservations(limit=limit, offset=offset)
     out = []
@@ -21,7 +21,7 @@ async def list_reservations_endpoint(limit: int = Query(100, ge=1, le=500), offs
         out.append(dto)
     return out
 
-@router.get("/{reservation_id}", response_model=VisitorReservationRead, dependencies=[Depends(require_permissions(["reservas:read"]))])
+@router.get("/{reservation_id}", response_model=VisitorReservationRead, dependencies=[Depends(require_permissions(["reservaparqueaderos:read"]))])
 async def get_reservation_endpoint(reservation_id: int):
     r = await get_reservation(reservation_id)
     if not r:
@@ -30,7 +30,7 @@ async def get_reservation_endpoint(reservation_id: int):
     dto.vehicle_type_id = r.vehicle_type_id
     return dto    
 
-@router.get("/role/{role}/{user_id}", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
+@router.get("/role/{role}/{user_id}", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservaparqueaderos:read"]))])
 async def get_reservations_by_user_id_endpoint(role: str, user_id: int, limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)):
     if role not in ["superadmin", "administrador"]:
         reservations = await list_reservations_by_user_id(user_id=user_id, limit=limit, offset=offset)
@@ -44,7 +44,7 @@ async def get_reservations_by_user_id_endpoint(role: str, user_id: int, limit: i
         out.append(dto)
     return out
 
-@router.get("/user/{user_id}", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservas:read"]))])
+@router.get("/user/{user_id}", response_model=list[VisitorReservationRead], dependencies=[Depends(require_permissions(["reservaparqueaderos:read"]))])
 async def get_reservations_by_user_id_endpoint(user_id: int):
     reservations = await list_reservations_by_user_id(user_id=user_id)
     out = []
@@ -54,7 +54,7 @@ async def get_reservations_by_user_id_endpoint(user_id: int):
         out.append(dto)
     return out
 
-@router.post("", response_model=VisitorReservationRead, status_code=201, dependencies=[Depends(require_permissions(["reservas:write"]))])
+@router.post("", response_model=VisitorReservationRead, status_code=201, dependencies=[Depends(require_permissions(["reservaparqueaderos:write"]))])
 async def create_reservation_endpoint(payload: VisitorReservationCreate, background_tasks: BackgroundTasks):
     try:
         spot = None
@@ -128,7 +128,7 @@ async def scan_qr_endpoint(reservation_id: int, token: str = Query(..., min_leng
         background_tasks = BackgroundTasks()
     return await scan_qr(reservation_id, token, background_tasks)
 
-@router.post("/{reservation_id}/cancel", status_code=204, dependencies=[Depends(require_permissions(["reservas:write"]))])
+@router.post("/{reservation_id}/cancel", status_code=204, dependencies=[Depends(require_permissions(["reservaparqueaderos:write"]))])
 async def cancel_reservation_endpoint(reservation_id: int):
     try:
         ok = await cancel_reservation(reservation_id)
@@ -138,7 +138,7 @@ async def cancel_reservation_endpoint(reservation_id: int):
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     return None
 
-@router.post("/{reservation_id}/complete", status_code=204, dependencies=[Depends(require_permissions(["reservas:write"]))])
+@router.post("/{reservation_id}/complete", status_code=204, dependencies=[Depends(require_permissions(["reservaparqueaderos:write"]))])
 async def complete_reservation_endpoint(reservation_id: int):
     ok = await complete_reservation(reservation_id)
     if not ok:

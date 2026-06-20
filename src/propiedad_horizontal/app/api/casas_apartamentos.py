@@ -11,7 +11,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 
 router = APIRouter(prefix="/casas-apartamentos", tags=["casas-apartamentos"])
 
-@router.get("", response_model=list[CasaApartamentoRead], dependencies=[Depends(require_permissions(["house_apartment:read"]))])
+@router.get("", response_model=list[CasaApartamentoRead], dependencies=[Depends(require_permissions(["casaapartamentos:read"]))])
 async def list_casas_apartamentos_endpoint(
     q: Optional[str] = None,
     active_only: bool = True,
@@ -21,7 +21,7 @@ async def list_casas_apartamentos_endpoint(
     items = await list_casas_apartamentos(q=q, active_only=active_only, limit=limit, offset=offset)
     return [CasaApartamentoRead.model_validate(i) for i in items]
 
-@router.get("/{item_id}", response_model=CasaApartamentoRead, dependencies=[Depends(require_permissions(["house_apartment:read"]))])
+@router.get("/{item_id}", response_model=CasaApartamentoRead, dependencies=[Depends(require_permissions(["casaapartamentos:read"]))])
 async def get_casa_apartamento_endpoint(item_id: int):
     i = await get_casa_apartamento(item_id)
     if not i:
@@ -35,7 +35,7 @@ async def get_c_numero_letra_id_endpoint(c_numero_letra: str):
         raise HTTPException(status_code=404, detail="Casa o apartamento no encontrada")
     return c_id
 
-@router.post("", response_model=CasaApartamentoRead, status_code=201, dependencies=[Depends(require_permissions(["house_apartment:write"]))])
+@router.post("", response_model=CasaApartamentoRead, status_code=201, dependencies=[Depends(require_permissions(["casaapartamentos:write"]))])
 async def create_casa_apartamento_endpoint(payload: CasaApartamentoCreate):
     try:
         i = await create_casa_apartamento(payload)
@@ -43,7 +43,7 @@ async def create_casa_apartamento_endpoint(payload: CasaApartamentoCreate):
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.patch("/{item_id}", response_model=CasaApartamentoRead, dependencies=[Depends(require_permissions(["house_apartment:write"]))])
+@router.patch("/{item_id}", response_model=CasaApartamentoRead, dependencies=[Depends(require_permissions(["casaapartamentos:write"]))])
 async def update_casa_apartamento_endpoint(item_id: int, payload: CasaApartamentoUpdate):
     try:
         i = await update_casa_apartamento(item_id, payload)
@@ -53,7 +53,7 @@ async def update_casa_apartamento_endpoint(item_id: int, payload: CasaApartament
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.post("/{item_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["house_apartment:write"]))])
+@router.post("/{item_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["casaapartamentos:write"]))])
 async def deactivate_casa_apartamento_endpoint(item_id: int):
     ok = await deactivate_casa_apartamento(item_id)
     if not ok:

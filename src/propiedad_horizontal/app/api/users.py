@@ -18,7 +18,7 @@ async def read_me(current_user=Depends(get_current_user)):
     return await to_user_read(current_user)
 
 # ----------------- LISTAR -----------------
-@router.get("", response_model=list[UserRead], dependencies=[Depends(require_permissions(["users:read"]))])
+@router.get("", response_model=list[UserRead], dependencies=[Depends(require_permissions(["usuarios:read"]))])
 async def list_users_endpoint(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)):
     users = await list_users(limit=limit, offset=offset)
     out: list[UserRead] = []
@@ -27,7 +27,7 @@ async def list_users_endpoint(limit: int = Query(50, ge=1, le=200), offset: int 
     return out
 
 # ----------------- OBTENER -----------------
-@router.get("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["users:read"]))])
+@router.get("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["usuarios:read"]))])
 async def get_user_endpoint(user_id: int):
     user = await get_user(user_id)
     if not user:
@@ -35,7 +35,7 @@ async def get_user_endpoint(user_id: int):
     return await to_user_read(user)
 
 # ----------------- CREAR -----------------
-@router.post("", response_model=UserRead, status_code=201, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.post("", response_model=UserRead, status_code=201, dependencies=[Depends(require_permissions(["usuarios:write"]))])
 async def create_user_endpoint(payload: UserCreate):
     try:
         user = await create_user(payload)
@@ -53,7 +53,7 @@ async def create_user_endpoint(payload: UserCreate):
         raise HTTPException(status_code=409, detail=str(e))
 
 # ----------------- ACTUALIZAR -----------------
-@router.patch("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.patch("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["usuarios:write"]))])
 async def update_user_endpoint(user_id: int, payload: UserUpdate):
     user = await update_user(user_id, payload)
     if not user:
@@ -61,7 +61,7 @@ async def update_user_endpoint(user_id: int, payload: UserUpdate):
     return await to_user_read(user)
 
 # Compatibilidad PUT (clientes que usan PUT para actualizar entre versiones)
-@router.put("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.put("/{user_id}", response_model=UserRead, dependencies=[Depends(require_permissions(["usuarios:write"]))])
 async def update_user_via_put_endpoint(user_id: int, payload: UserUpdate):
     user = await update_user(user_id, payload)
     if not user:
@@ -69,7 +69,7 @@ async def update_user_via_put_endpoint(user_id: int, payload: UserUpdate):
     return await to_user_read(user)
 
 # ----------------- ELIMINAR -----------------
-@router.delete("/NO/{user_id}", status_code=204, dependencies=[Depends(require_permissions(["users:write"]))])
+@router.delete("/NO/{user_id}", status_code=204, dependencies=[Depends(require_permissions(["usuarios:write"]))])
 async def delete_user_endpoint(user_id: int):
     ok = await delete_user(user_id)
     if not ok:

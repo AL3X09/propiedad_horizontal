@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 
 
+
 class Settings(BaseSettings):
     # ============================================================
     # APLICACIÓN
@@ -57,23 +58,27 @@ class Settings(BaseSettings):
     # ============================================================
     TORTOISE_MODELS: List[str] = [
         "propiedad_horizontal.app.models.user",
-        "propiedad_horizontal.app.models.role",
-        "propiedad_horizontal.app.models.permission",
-        "propiedad_horizontal.app.models.parking",
-        "propiedad_horizontal.app.models.parking_assignment",
-        "propiedad_horizontal.app.models.parking_reservation",
-        "propiedad_horizontal.app.models.propiedad_horizontal",
-        "propiedad_horizontal.app.models.persona",
-        "propiedad_horizontal.app.models.torre_interior",
-        "propiedad_horizontal.app.models.casa_apartamento",
-        "propiedad_horizontal.app.models.casa_apartamento_interior_torre",
-        "propiedad_horizontal.app.models.resident_behavior",
-        "propiedad_horizontal.app.models.vehicle_type",
-        "propiedad_horizontal.app.models.vehicle",
-        # Nuevos modelos del sistema de lottery de parqueaderos
-        "propiedad_horizontal.app.models.parking_lottery_config",
-        "propiedad_horizontal.app.models.parking_lottery_round",
-        "propiedad_horizontal.app.models.parking_lottery_participant",
+                "propiedad_horizontal.app.models.role",
+                "propiedad_horizontal.app.models.permission",
+                "propiedad_horizontal.app.models.bien",
+                "propiedad_horizontal.app.models.trasteo",
+                "propiedad_horizontal.app.models.trasteo_bien",
+                "propiedad_horizontal.app.models.parking",
+                "propiedad_horizontal.app.models.parking_assignment",
+                "propiedad_horizontal.app.models.parking_reservation",
+                "propiedad_horizontal.app.models.propiedad_horizontal",
+                "propiedad_horizontal.app.models.persona",
+                "propiedad_horizontal.app.models.torre_interior",
+                "propiedad_horizontal.app.models.casa_apartamento",
+                "propiedad_horizontal.app.models.casa_apartamento_interior_torre",
+                "propiedad_horizontal.app.models.parking_lottery_config",
+                "propiedad_horizontal.app.models.parking_lottery_round",
+                "propiedad_horizontal.app.models.parking_lottery_participant",
+                "propiedad_horizontal.app.models.resident_behavior",
+                "propiedad_horizontal.app.models.vehicle_type",
+                "propiedad_horizontal.app.models.vehicle",
+                "propiedad_horizontal.app.models.domain_config",
+                "aerich.models",
     ]
 
     # ============================================================

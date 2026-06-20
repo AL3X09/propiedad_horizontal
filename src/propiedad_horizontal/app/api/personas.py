@@ -35,7 +35,7 @@ async def update_my_persona(payload: PersonaUpdate, current_user: User = Depends
     persona = await update_persona(items[0].id, payload)
     return PersonaRead.model_validate(persona)
 
-@router.get("", response_model=list[PersonaRead], dependencies=[Depends(require_permissions(["person:read"]))])
+@router.get("", response_model=list[PersonaRead], dependencies=[Depends(require_permissions(["personas:read"]))])
 async def list_personas_endpoint(
     # CORRECCIÓN: Ahora filtra por link (casa-torre) en lugar de casa/apartamento
     casa_interior_link_id: Optional[int] = None,
@@ -57,14 +57,14 @@ async def list_personas_endpoint(
     )
     return [PersonaRead.model_validate(i) for i in items]
 
-@router.get("/{persona_id}", response_model=PersonaRead, dependencies=[Depends(require_permissions(["person:read"]))])
+@router.get("/{persona_id}", response_model=PersonaRead, dependencies=[Depends(require_permissions(["personas:read"]))])
 async def get_persona_endpoint(persona_id: int):
     p = await get_persona(persona_id)
     if not p:
         raise HTTPException(status_code=404, detail="Persona no encontrada")
     return PersonaRead.model_validate(p)
 
-@router.post("", response_model=PersonaRead, status_code=201, dependencies=[Depends(require_permissions(["person:write"]))])
+@router.post("", response_model=PersonaRead, status_code=201, dependencies=[Depends(require_permissions(["personas:write"]))])
 async def create_persona_endpoint(payload: PersonaCreate):
     try:
         p = await create_persona(payload)
@@ -72,14 +72,14 @@ async def create_persona_endpoint(payload: PersonaCreate):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.patch("/{persona_id}", response_model=PersonaRead, dependencies=[Depends(require_permissions(["person:write"]))])
+@router.patch("/{persona_id}", response_model=PersonaRead, dependencies=[Depends(require_permissions(["personas:write"]))])
 async def update_persona_endpoint(persona_id: int, payload: PersonaUpdate):
     p = await update_persona(persona_id, payload)
     if not p:
         raise HTTPException(status_code=404, detail="Persona no encontrada")
     return PersonaRead.model_validate(p)
 
-@router.post("/{persona_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["person:write"]))])
+@router.post("/{persona_id}/deactivate", status_code=204, dependencies=[Depends(require_permissions(["personas:write"]))])
 async def deactivate_persona_endpoint(persona_id: int):
     ok = await deactivate_persona(persona_id)
     if not ok:

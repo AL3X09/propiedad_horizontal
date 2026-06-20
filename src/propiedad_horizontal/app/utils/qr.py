@@ -7,31 +7,31 @@ from typing import Union
 from pydantic import AnyUrl
 from urllib.parse import quote
 
-
+from propiedad_horizontal.app.services.domain_config_service import get_active_domain_or_default
 from propiedad_horizontal.app.core.config import settings
 
 
-
-def generate_qr_url(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]) -> str:
+async def generate_qr_url(reservation_id: Union[int, str], token: str) -> str:
     """
     Genera la URL completa del QR para la reserva.
     
     Args:
         reservation_id: ID único de la reserva
         token: Token de validación hexadecimal del QR
-        base: URL base de la API
     
     Returns:
         URL completa formateada con el endpoint de escaneo
     """
-    base_str = str(base)  # <- clave: castear el AnyUrl a str
+    domain = await get_active_domain_or_default(f"{settings.APP_HOST}:{settings.APP_PORT}")
+    #base_str = str(base)  # <- clave: castear el AnyUrl a str
     token_q = quote(token, safe="")  # evita problemas con caracteres especiales
     # La ruta real del router de reservas usa el prefijo /parking/reservations
     # (tal como define el archivo api/parking_reservations.py), así que debe
     # coincidir con ello para que el QR lleve al endpoint correcto.
-    return f"{base_str.rstrip('/')}/parking/reservations/{reservation_id}/scan?token={token_q}"
+    print(f"Generando URL QR con dominio: {domain}, reserva_id: {reservation_id}, token: {token_q}")
+    return f"{domain.rstrip('/')}/parking/reservations/{reservation_id}/scan?token={token_q}"
 
-def generate_qr_image(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]):
+async def generate_qr_image(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]):
     """
     Genera una imagen QR en formato PNG.
     
@@ -43,14 +43,14 @@ def generate_qr_image(reservation_id: Union[int, str], token: str, base: Union[s
     Returns:
         bytes: Contenido PNG de la imagen QR
     """
-    data = generate_qr_url(reservation_id, token, base)
+    data = await generate_qr_url(reservation_id, token)
     img = qrcode.make(data)
     buf = io.BytesIO()
     img.save(buf, "PNG")
     return buf.getvalue()
 
 
-def generate_qr_base64(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]) -> str:
+async def generate_qr_base64(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]) -> str:
     """
     Genera una imagen QR encodificada en base64 para embeber en HTML.
     
@@ -64,7 +64,7 @@ def generate_qr_base64(reservation_id: Union[int, str], token: str, base: Union[
     Returns:
         str: String base64 con el prefijo data:image/png;base64, listo para usar en src de img
     """
-    qr_bytes = generate_qr_image(reservation_id, token, base)
+    qr_bytes = await generate_qr_image(reservation_id, token, base)
     qr_b64 = base64.b64encode(qr_bytes).decode("utf-8")
     return f"data:image/png;base64,{qr_b64}"
 

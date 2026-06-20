@@ -20,7 +20,7 @@ from propiedad_horizontal.app.core.auth import require_permissions
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
-@router.get("", response_model=list[VehicleRead], dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("", response_model=list[VehicleRead], dependencies=[Depends(require_permissions(["vehiculos:read"]))])
 async def list_vehicles_endpoint(
     persona_id: int | None = Query(None, description="Filtrar por persona"),
     vehicle_type_id: int | None = Query(None, description="Filtrar por tipo de vehículo"),
@@ -52,7 +52,7 @@ async def list_active_vehicles_endpoint():
     return [VehicleRead.model_validate(v) for v in items]
 
 
-@router.get("/{vehicle_id}", response_model=VehicleRead, dependencies=[Depends(require_permissions(["parking:read"]))])
+@router.get("/{vehicle_id}", response_model=VehicleRead, dependencies=[Depends(require_permissions(["vehiculos:read"]))])
 async def get_vehicle_endpoint(vehicle_id: int):
     vehicle = await get_vehicle(vehicle_id)
     if not vehicle:
@@ -60,7 +60,7 @@ async def get_vehicle_endpoint(vehicle_id: int):
     return VehicleRead.model_validate(vehicle)
 
 
-@router.post("", response_model=VehicleRead, status_code=201, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("", response_model=VehicleRead, status_code=201, dependencies=[Depends(require_permissions(["vehiculos:write"]))])
 async def create_vehicle_endpoint(payload: VehicleCreate):
     """
     Crea un nuevo vehículo.
@@ -73,7 +73,7 @@ async def create_vehicle_endpoint(payload: VehicleCreate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.patch("/{vehicle_id}", response_model=VehicleRead, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.patch("/{vehicle_id}", response_model=VehicleRead, dependencies=[Depends(require_permissions(["vehiculos:write"]))])
 async def update_vehicle_endpoint(vehicle_id: int, payload: VehicleUpdate):
     """
     Actualiza un vehículo existente.
@@ -87,7 +87,7 @@ async def update_vehicle_endpoint(vehicle_id: int, payload: VehicleUpdate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{vehicle_id}/toggle", response_model=VehicleRead, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.post("/{vehicle_id}/toggle", response_model=VehicleRead, dependencies=[Depends(require_permissions(["vehiculos:write"]))])
 async def toggle_vehicle_endpoint(vehicle_id: int, payload: VehicleToggle):
     """
     Activa o desactiva un vehículo.
@@ -98,7 +98,7 @@ async def toggle_vehicle_endpoint(vehicle_id: int, payload: VehicleToggle):
     return VehicleRead.model_validate(vehicle)
 
 
-@router.delete("/{vehicle_id}", status_code=204, dependencies=[Depends(require_permissions(["parking:write"]))])
+@router.delete("/{vehicle_id}", status_code=204, dependencies=[Depends(require_permissions(["vehiculos:delete"]))])
 async def delete_vehicle_endpoint(vehicle_id: int):
     """
     Desactiva un vehículo (soft-delete).

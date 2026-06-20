@@ -90,7 +90,7 @@ async def toggle_bien_endpoint(bien_id: int, payload: BienToggle):
     return dto
 
 
-@router.delete("/{bien_id}", status_code=204, dependencies=[Depends(require_permissions(["bienes:write"]))])
+@router.delete("/{bien_id}", status_code=204, dependencies=[Depends(require_permissions(["bienes:delete"]))])
 async def delete_bien_endpoint(bien_id: int):
     ok = await delete_bien(bien_id)
     if not ok:
