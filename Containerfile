@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     # Añadimos /app al path para que Python encuentre tus módulos
     PYTHONPATH=/app
+    TZ=America/Bogota
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
