@@ -212,8 +212,8 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
         # Función helper para formatear fecha - maneja tanto naive como aware datetimes
         def format_datetime(dt):
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=BOGOTA_TZ)
-            return dt.astimezone(BOGOTA_TZ).strftime("%d/%m/%Y a las %H:%M")
+                dt = dt.replace(tzinfo=BOGOTA_TZ)  # naive = ya es Bogotá, solo asignar
+            return dt.strftime("%d/%m/%Y a las %H:%M")  # ya no necesita astimezone
         
         starts_at_formatted = format_datetime(reservation.starts_at)
         ends_at_formatted = format_datetime(reservation.ends_at)
@@ -250,6 +250,18 @@ async def _populate_qr(reservation: VisitorReservation):
 
 
 async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, starts_at: datetime, ends_at: datetime, visitor_type_document: str, visitor_document_number: str, visitor_name: str, visitor_email: str, visitor_cell: str, vehicle_type_id: int, vehicle_code: str, billed_minutes: int, background_tasks: BackgroundTasks) -> VisitorReservation:
+    
+    # Normalizar: si llegan con timezone (ej: Z/UTC del frontend),
+    # convertir a Bogotá y guardar como naive para consistencia interna
+    def normalize_to_bogota_naive(dt: datetime) -> datetime:
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(BOGOTA_TZ)
+        else:
+            dt = dt.replace(tzinfo=BOGOTA_TZ)
+        return dt.replace(tzinfo=None)  # guardar naive = hora Bogotá
+    
+    starts_at = normalize_to_bogota_naive(starts_at)
+    ends_at   = normalize_to_bogota_naive(ends_at)
     
     #print("Creating reservation...", f"Starts At: {starts_at}, Ends At: {ends_at}, Billed Minutes: {billed_minutes}, starts_at type: {type(starts_at)}, ends_at type: {type(ends_at)}")
     # Las fechas que llegan del frontend ya están en hora de Colombia (Bogotá)
@@ -388,9 +400,9 @@ async def send_reservation_qr(reservation: VisitorReservation):
         # Función helper para formatear fecha - maneja tanto naive como aware datetimes
         def format_datetime(dt):
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=BOGOTA_TZ)
-            return dt.astimezone(BOGOTA_TZ).strftime("%d/%m/%Y a las %H:%M")
-        
+                dt = dt.replace(tzinfo=BOGOTA_TZ)  # naive = ya es Bogotá, solo asignar
+            return dt.strftime("%d/%m/%Y a las %H:%M")  # ya no necesita astimezone
+                
         # Formatear fechas de manera legible
         starts_at_formatted = format_datetime(reservation.starts_at)
         ends_at_formatted = format_datetime(reservation.ends_at)
@@ -501,7 +513,7 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
     
     # Procesar escaneo según estado actual
     now = datetime.now(BOGOTA_TZ)
-    print(f"fecha es {now} ")
+    #print(f"fecha es {now} ")
     
     # Normalizar starts_at para comparación: si tiene timezone, convertir a Bogotá; si no, usar directo
     if r.starts_at.tzinfo is not None:
