@@ -244,7 +244,8 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
 
 async def _populate_qr(reservation: VisitorReservation):
     reservation.qr_token = uuid4().hex
-    reservation.qr_generated_at = datetime.now(BOGOTA_TZ)
+    # Generar en Bogotá, pero quitar el tzinfo para que la BD no lo convierta a UTC
+    reservation.qr_generated_at = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
     await reservation.save()
 
 
@@ -512,7 +513,8 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
         )
     
     # Procesar escaneo según estado actual
-    now = datetime.now(BOGOTA_TZ)
+    # Antes: now = datetime.now(BOGOTA_TZ)
+    now = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
     #print(f"fecha es {now} ")
     
     # Normalizar starts_at para comparación: si tiene timezone, convertir a Bogotá; si no, usar directo
