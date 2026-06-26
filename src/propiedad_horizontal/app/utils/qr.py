@@ -28,7 +28,7 @@ async def generate_qr_url(reservation_id: Union[int, str], token: str) -> str:
     # La ruta real del router de reservas usa el prefijo /parking/reservations
     # (tal como define el archivo api/parking_reservations.py), así que debe
     # coincidir con ello para que el QR lleve al endpoint correcto.
-    print(f"Generando URL QR con dominio: {domain}, reserva_id: {reservation_id}, token: {token_q}")
+    #print(f"Generando URL QR con dominio: {domain}, reserva_id: {reservation_id}, token: {token_q}")
     return f"{domain.rstrip('/')}/parking/reservations/{reservation_id}/scan?token={token_q}"
 
 async def generate_qr_image(reservation_id: Union[int, str], token: str, base: Union[str, AnyUrl]):

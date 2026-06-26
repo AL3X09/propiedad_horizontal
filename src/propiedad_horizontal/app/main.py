@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from propiedad_horizontal.app.core.db import init_tortoise, close_tortoise
 from propiedad_horizontal.app.core.config import settings
@@ -51,9 +52,40 @@ async def lifespan(app: FastAPI):
     await close_tortoise()                         # 3. Cierra conexiones limpiamente
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title=settings.APP_NAME, lifespan=lifespan,redirect_slashes=False)
+def generate_custom_openapi(app: FastAPI):
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        description=settings.APP_DESCRIPTION,
+        contact={
+            "name": settings.APP_CONTACT_NAME,
+            "email": settings.APP_CONTACT_EMAIL,
+        },
+        license_info={
+            "name": settings.APP_LICENSE,
+        },
+        terms_of_service=settings.APP_TERMS_OF_SERVICE,
+        routes=app.routes,
+    )
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
 
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        description=settings.APP_DESCRIPTION,
+        lifespan=lifespan,
+        redirect_slashes=False,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+    )
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -61,6 +93,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    
+    app.openapi = lambda: generate_custom_openapi(app)
 
     #@app.get("/health", tags=["health"])
     #async def health():
