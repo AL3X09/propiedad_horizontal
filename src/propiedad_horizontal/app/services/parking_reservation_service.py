@@ -241,14 +241,6 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
         import sys
         print(f"Error al enviar email de checkout para reserva {reservation.id}: {str(e)}", file=sys.stderr)
 
-
-async def _populate_qr(reservation: VisitorReservation):
-    reservation.qr_token = uuid4().hex
-    # Generar en Bogotá, pero quitar el tzinfo para que la BD no lo convierta a UTC
-    reservation.qr_generated_at = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
-    print(f"fecha QR es {reservation.qr_generated_at} ")
-    await reservation.save()
-
 async def _populate_qr(reservation: VisitorReservation):
     reservation.qr_token = uuid4().hex
     # Sin .replace(tzinfo=None)
@@ -268,16 +260,8 @@ async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, sta
             dt = dt.replace(tzinfo=BOGOTA_TZ)
         return dt.replace(tzinfo=None)  # guardar naive = hora Bogotá
     
-    # Elimina la función normalize_to_bogota_naive y haz esto:
-    def normalize_to_bogota_aware(dt: datetime) -> datetime:
-        if dt.tzinfo is None:
-            # Si llega naive (del frontend), asume que es Bogotá
-            dt = dt.replace(tzinfo=BOGOTA_TZ)
-        # Convierte a la zona de Bogotá (por si llegó en UTC del frontend)
-        return dt.astimezone(BOGOTA_TZ)
-    
-    starts_at = normalize_to_bogota_aware(starts_at)
-    ends_at   = normalize_to_bogota_aware(ends_at)
+    starts_at = normalize_to_bogota_naive(starts_at)
+    ends_at   = normalize_to_bogota_naive(ends_at)
     
     #print("Creating reservation...", f"Starts At: {starts_at}, Ends At: {ends_at}, Billed Minutes: {billed_minutes}, starts_at type: {type(starts_at)}, ends_at type: {type(ends_at)}")
     # Las fechas que llegan del frontend ya están en hora de Colombia (Bogotá)
@@ -529,14 +513,15 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
     
     # Procesar escaneo según estado actual
     # En scan_qr
-    now = datetime.now(BOGOTA_TZ) # Sin .replace
-    print(f"fecha QR es {now} ")
-    
-    # Normalizar starts_at para comparación: si tiene timezone, convertir a Bogotá; si no, usar directo
+    now = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
+
+    # Y simplificar la normalización de starts_at:
     if r.starts_at.tzinfo is not None:
-        starts_at_bogota = r.starts_at.astimezone(BOGOTA_TZ)
+        starts_at_bogota = r.starts_at.astimezone(BOGOTA_TZ).replace(tzinfo=None)
     else:
-        starts_at_bogota = r.starts_at.replace(tzinfo=BOGOTA_TZ)
+        starts_at_bogota = r.starts_at  # ya es naive Bogotá
+        
+    print(f"fecha QR es {now} ")
     
     if r.status == ReservationStatus.ACTIVE:
         # Primer escaneo: visitante llega al parqueadero

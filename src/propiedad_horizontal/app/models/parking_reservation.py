@@ -39,11 +39,11 @@ class VisitorReservation(models.Model):
 
     # Identificador del QR enviado al visitante (uuid hex). Se utiliza para validar escaneos.
     qr_token = fields.CharField(max_length=64, unique=True, null=False)
-    qr_generated_at = fields.DatetimeField(null=True)
+    qr_generated_at = fields.DatetimeField(null=True,use_tz=False)
 
     # Período de la reserva
-    starts_at = fields.DatetimeField()
-    ends_at = fields.DatetimeField()
+    starts_at = fields.DatetimeField(use_tz=False)
+    ends_at = fields.DatetimeField(use_tz=False)
 
     # Facturación
     billed_minutes = fields.IntField()  # Minutos a facturar
@@ -51,8 +51,8 @@ class VisitorReservation(models.Model):
 
     status = fields.CharEnumField(ReservationStatus, default=ReservationStatus.ACTIVE)
 
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+    created_at = fields.DatetimeField(auto_now_add=True,use_tz=False)
+    updated_at = fields.DatetimeField(auto_now=True,use_tz=False)
 
     class Meta:
         table = "parking_visitor_reservations"
