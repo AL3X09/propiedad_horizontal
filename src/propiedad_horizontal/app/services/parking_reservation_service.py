@@ -243,8 +243,8 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
 
 async def _populate_qr(reservation: VisitorReservation):
     reservation.qr_token = uuid4().hex
-    # Sin .replace(tzinfo=None)
-    reservation.qr_generated_at = datetime.now(BOGOTA_TZ)
+    # ✅ .replace(tzinfo=None) — guarda naive = hora Bogotá, compatible con la BD
+    reservation.qr_generated_at = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
     await reservation.save()
 
 
