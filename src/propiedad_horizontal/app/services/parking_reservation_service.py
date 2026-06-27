@@ -304,8 +304,7 @@ async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, sta
         billed_minutes=billed_minutes,
         total_price='0',
         status=ReservationStatus.ACTIVE,
-        qr_token="",
-        qr_generated_at=None
+        qr_token=""
     )
     await _populate_qr(reservation)
     # enviar correo en segundo plano

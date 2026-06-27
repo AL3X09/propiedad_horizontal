@@ -39,7 +39,7 @@ class VisitorReservation(models.Model):
 
     # Identificador del QR enviado al visitante (uuid hex). Se utiliza para validar escaneos.
     qr_token = fields.CharField(max_length=64, unique=True, null=False)
-    qr_generated_at = fields.DatetimeField(null=False)
+    qr_generated_at = fields.DatetimeField(auto_now_add=True)
 
     # Período de la reserva
     starts_at = fields.DatetimeField()
