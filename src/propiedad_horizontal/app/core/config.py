@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     APP_HOST: str = Field(...)
     APP_PORT: int = Field(...)
     ENVIRONMENT: str = Field(...)
-    APP_VERSION: str = "1.0.11"
+    APP_VERSION: str = "1.0.12"
     APP_DESCRIPTION: str = "API para gestión de propiedad horizontal"
     APP_CONTACT_NAME: str = "Soporte Técnico"
     APP_CONTACT_EMAIL: str = "soporte@propiedadhorizontal.com"

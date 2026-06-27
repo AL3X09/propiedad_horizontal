@@ -25,44 +25,6 @@ from propiedad_horizontal.app.domain.enums import ReservationStatus, ParkingSpot
 
 BOGOTA_TZ = ZoneInfo(APP_TIMEZONE)
 
-async def _spot_disponible(vehicle_type_id: int):
-    # evitar que se solape con otras reservas
-    spot_disponible = await ParkingSpot.filter(
-        parking_status=ParkingSpotStatus.AVIABLE,
-        vehicle_type_id=vehicle_type_id,
-        is_active=True,
-    ).first()
-    if spot_disponible:
-        return spot_disponible
-    else:
-        return None
-    
-async def _id_interior_apto(torre:str,casa_apto:str) -> int:
-    torre = await TorreInterior.get_or_none(t_numero_letra=torre)
-    casa_apto = await CasaApartamento.get_or_none(c_numero_letra=casa_apto)
-    
-    casa_apto_id = await CasaApartamentoInteriorTorre.filter(
-        casa_apartamento=torre.id, #busco el parqueadero disponible
-        torre_interior=casa_apto.id
-    ).first()  # Obtiene el primer objeto o None
-    if casa_apto_id:
-        return casa_apto_id.id  # Retorna list spot encontrado
-    else:
-        return None  # O lanzar una excepción si no hay spots disponibles
-
-async def _id_spot_disponible(vehicle_type_id: int) -> int | None:
-    # Solape con otras reservas
-    spot_disponible = await ParkingSpot.filter(
-        parking_status=ParkingSpotStatus.AVIABLE,
-        vehicle_type_id=vehicle_type_id,
-        is_active=True,
-    ).first()
-    if spot_disponible:
-        return spot_disponible.id
-    else:
-        return None
-
-
 async def _has_overlap_for_spot_datetime(spot_id: int, start_dt: datetime, end_dt: datetime) -> bool:
     # Solape con otras reservas
     reserv_overlap = await VisitorReservation.filter(
@@ -98,12 +60,6 @@ async def _find_available_spot(vehicle_type_id: int, starts_at: datetime, ends_a
             return spot
     return None
 
-async def _compute_total_price(reservation: VisitorReservation) -> Decimal:
-    """Cálculo simple: billed_minutes × minute_price. Usado para referencia solo."""
-    spot = await reservation.spot
-    return Decimal(reservation.billed_minutes) * spot.minute_price
-
-
 async def _compute_total_price_checkout(reservation: VisitorReservation) -> tuple[Decimal, str]:
     """
     Calcula el precio final al finalizar la reserva (checkout/salida).
@@ -126,22 +82,23 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
     spot = await reservation.spot
     minute_price = Decimal(spot.minute_price)
     
-    # Calcular tiempo real transcurrido
-    # Normalizar a timezone Bogotá si son naive para que la resta funcione correctamente
     starts = reservation.starts_at
     ends = reservation.ends_at
-    
-    if starts.tzinfo is not None:
-        starts = starts.astimezone(BOGOTA_TZ)
-    else:
-        starts = starts.replace(tzinfo=BOGOTA_TZ)
-    
-    if ends.tzinfo is not None:
-        ends = ends.astimezone(BOGOTA_TZ)
-    else:
-        ends = ends.replace(tzinfo=BOGOTA_TZ)
-    
+
+    # Si vienen de la BD como aware (TIMESTAMPTZ), convertir a Bogotá para mostrar
+    # Si por algún dato viejo llegasen naive, asumir UTC
+    if starts.tzinfo is None:
+        starts = starts.replace(tzinfo=timezone.utc)
+    if ends.tzinfo is None:
+        ends = ends.replace(tzinfo=timezone.utc)
+
+    # Convertir a Bogotá solo para el desglose legible
+    #starts_bogota = starts.astimezone(BOGOTA_TZ)
+    #ends_bogota   = ends.astimezone(BOGOTA_TZ)
+
+    # El cálculo de diferencia NO depende de timezone, usa los aware directamente
     tiempo_real_segundos = (ends - starts).total_seconds()
+      
     tiempo_real_minutos = tiempo_real_segundos / 60.0
     
     billed_minutes = reservation.billed_minutes
@@ -210,10 +167,10 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
         spot_number = str(spot.code) if spot else "TBD"
         
         # Función helper para formatear fecha - maneja tanto naive como aware datetimes
-        def format_datetime(dt):
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=BOGOTA_TZ)  # naive = ya es Bogotá, solo asignar
-            return dt.strftime("%d/%m/%Y a las %H:%M")  # ya no necesita astimezone
+        def format_datetime(dt: datetime) -> str:
+            if dt.tzinfo is not None:
+                dt = dt.replace(tzinfo=None)  # quitar tz si acaso
+            return dt.strftime("%d/%m/%Y a las %H:%M")
         
         starts_at_formatted = format_datetime(reservation.starts_at)
         ends_at_formatted = format_datetime(reservation.ends_at)
@@ -243,25 +200,20 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
 
 async def _populate_qr(reservation: VisitorReservation):
     reservation.qr_token = uuid4().hex
-    # ✅ .replace(tzinfo=None) — guarda naive = hora Bogotá, compatible con la BD
-    reservation.qr_generated_at = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
+    reservation.qr_generated_at = datetime.now()  # hora del servidor, sin conversión
     await reservation.save()
 
 
 
 async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, starts_at: datetime, ends_at: datetime, visitor_type_document: str, visitor_document_number: str, visitor_name: str, visitor_email: str, visitor_cell: str, vehicle_type_id: int, vehicle_code: str, billed_minutes: int, background_tasks: BackgroundTasks) -> VisitorReservation:
     
-    # Normalizar: si llegan con timezone (ej: Z/UTC del frontend),
-    # convertir a Bogotá y guardar como naive para consistencia interna
-    def normalize_to_bogota_naive(dt: datetime) -> datetime:
-        if dt.tzinfo is not None:
-            dt = dt.astimezone(BOGOTA_TZ)
-        else:
-            dt = dt.replace(tzinfo=BOGOTA_TZ)
-        return dt.replace(tzinfo=None)  # guardar naive = hora Bogotá
-    
-    starts_at = normalize_to_bogota_naive(starts_at)
-    ends_at   = normalize_to_bogota_naive(ends_at)
+   # DESPUÉS — guardar tal cual viene del front
+    def strip_tzinfo(dt: datetime) -> datetime:
+        """Quita tzinfo si viene del front con Z/UTC, conserva el valor numérico exacto."""
+        return dt.replace(tzinfo=None)
+
+    starts_at = strip_tzinfo(starts_at)
+    ends_at   = strip_tzinfo(ends_at)
     
     #print("Creating reservation...", f"Starts At: {starts_at}, Ends At: {ends_at}, Billed Minutes: {billed_minutes}, starts_at type: {type(starts_at)}, ends_at type: {type(ends_at)}")
     # Las fechas que llegan del frontend ya están en hora de Colombia (Bogotá)
@@ -513,21 +465,17 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
     
     # Procesar escaneo según estado actual
     # En scan_qr
-    now = datetime.now(BOGOTA_TZ).replace(tzinfo=None)
+    now = datetime.now()
 
-    # Y simplificar la normalización de starts_at:
-    if r.starts_at.tzinfo is not None:
-        starts_at_bogota = r.starts_at.astimezone(BOGOTA_TZ).replace(tzinfo=None)
-    else:
-        starts_at_bogota = r.starts_at  # ya es naive Bogotá
-        
+    # starts_at viene naive de la BD (guardado tal cual del front)
+    starts_at_naive = r.starts_at if r.starts_at.tzinfo is None else r.starts_at.replace(tzinfo=None)
     print(f"fecha QR es {now} ")
     
     if r.status == ReservationStatus.ACTIVE:
         # Primer escaneo: visitante llega al parqueadero
         # si se presenta más de 10 minutos después de la hora de inicio,
         # consideramos que perdió la reserva (incumplida).
-        late_threshold = starts_at_bogota + timedelta(minutes=10)
+        late_threshold = starts_at_naive + timedelta(minutes=10)
         if now > late_threshold:
             r.status = ReservationStatus.VIOLATED
             r.updated_at = now
