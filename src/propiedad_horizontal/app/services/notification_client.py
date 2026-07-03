@@ -42,6 +42,7 @@ class NotificationClient:
             httpx.HTTPStatusError: Si el servicio retorna error
         """
         url = f"{self.base_url}/email/enviar"
+        print(f"la url es: {url}")
         payload = {
             "to_email": to_email,
             "subject": subject,

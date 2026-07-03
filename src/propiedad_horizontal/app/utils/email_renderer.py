@@ -133,3 +133,24 @@ def render_reservation_confirmation(
         "total_price": total_price,
     }
     return _simple_template_render(template, context)
+
+def render_wellcome_reservation(
+    visitor_name: str,
+    reservation_id: int
+) -> str:
+    """
+    Renderiza el email de bienvenida para la reserva.
+    
+    Args:
+        visitor_name: Nombre del visitante
+        reservation_id: ID de la reserva
+    
+    Returns:
+        HTML del email listo para enviar
+    """
+    template = _load_template("wellcome_reservation.html")
+    context = {
+        "visitor_name": visitor_name,
+        "reservation_id": reservation_id,
+    }
+    return _simple_template_render(template, context)

@@ -12,13 +12,11 @@ from propiedad_horizontal.app.utils.qr import generate_qr_base64
 from propiedad_horizontal.app.utils.email_renderer import (
     render_checkout_email,
     render_reservation_confirmation,
+    render_wellcome_reservation,
 )
 from propiedad_horizontal.app.services.notification_client import notification_client
 from propiedad_horizontal.app.models.parking import ParkingSpot
 from propiedad_horizontal.app.models.parking_reservation import VisitorReservation
-from propiedad_horizontal.app.models.casa_apartamento_interior_torre import CasaApartamentoInteriorTorre
-from propiedad_horizontal.app.models.torre_interior import TorreInterior
-from propiedad_horizontal.app.models.casa_apartamento import CasaApartamento
 from propiedad_horizontal.app.models.vehicle_type import VehicleType
 from propiedad_horizontal.app.models.persona import Persona
 from propiedad_horizontal.app.domain.enums import ReservationStatus, ParkingSpotStatus, AssignmentStatus
@@ -100,50 +98,52 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
     tiempo_real_segundos = (ends - starts).total_seconds()
       
     tiempo_real_minutos = tiempo_real_segundos / 60.0
-    
+    print(f"Tiempo real calculado: {tiempo_real_minutos:.1f} min (desde {starts} hasta {ends})")
+    #minutos facturados
     billed_minutes = reservation.billed_minutes
+    print(f"Tiempo facturado: {billed_minutes} min")
     diferencia = tiempo_real_minutos - billed_minutes
     
     minutos_a_cobrar = billed_minutes
     recargo_adicional = Decimal(0)
-    desglose = ""
-    
+    desglose = f"El tiempo de la reserva solicitada fue de {billed_minutes} min,"
+
     if diferencia < 0:
-        # Duraron menos que billed_minutes
+        # Tolerancia: cobrar billed_minutes completos cobrar lo solicitado en la reserva (billed_minutes)
         if abs(diferencia) <= 4:
             # Tolerancia: cobrar billed_minutes completos
-            minutos_a_cobrar = billed_minutes
-            desglose = f"Tiempo real: {tiempo_real_minutos:.1f} min. Se cobra billed_minutes ({billed_minutes} min) por tolerancia."
+            minutos_a_cobrar = int(billed_minutes)
+            desglose += f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. facturados, Se cobraran ({minutos_a_cobrar:.1f} min) por tolerancia."
         else:
-            # Sin tolerancia: cobrar lo que realmente usó
+            # Con tolerancia: cobrar lo que realmente usó (uso menos tiempo de lo solicitado)
             minutos_a_cobrar = int(tiempo_real_minutos)
-            desglose = f"Tiempo real: {tiempo_real_minutos:.1f} min < {billed_minutes} min facturados. Se cobra solo tiempo usado."
+            desglose += f"Tiempo real usado fue de : {tiempo_real_minutos:.1f} min. facturados, Se cobra solo el tiempo usado {minutos_a_cobrar:.1f} min."
     elif diferencia > 0:
-        # Duraron más que billed_minutes
+        # Duraron más que minutos solicitados, revisar tolerancia de 5 minutos regla de recargo
         if diferencia <= 5:
             # Tolerancia: cobrar billed_minutes sin recargo
             minutos_a_cobrar = billed_minutes
-            desglose = f"Tiempo excedido: {diferencia:.1f} min ≤ 5 min. Se cobra billed_minutes sin recargo."
+            desglose = desglose + f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. Tiempo excedido en: {diferencia:.1f} min menor o igual a 5 min. Se cobraran {minutos_a_cobrar:.1f} min. sin recargo."
         else:
             # Supera tolerancia: recargo de $5.000
-            minutos_a_cobrar = billed_minutes
+            minutos_a_cobrar = int(tiempo_real_minutos)
             recargo_adicional = Decimal(5000)
-            desglose = f"Tiempo excedido: {diferencia:.1f} min > 5 min. Se cobra billed_minutes + $5.000 de recargo."
+            desglose += f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. Tiempo excedido en: {diferencia:.1f} min. es mayor a 5 min. Se cobraran {minutos_a_cobrar:.1f} min + $5.000 de recargo."
     else:
         # Exactamente el tiempo
-        desglose = f"Tiempo exacto: {tiempo_real_minutos:.1f} min = {billed_minutes} min."
+        desglose += f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. Se cobraran el timpo exacto {billed_minutes} min."
     
     total_price = (Decimal(minutos_a_cobrar) * minute_price) + recargo_adicional
     
     # Desglose completo
     resumen = (
-        f"{desglose}\n"
-        f"Minutos cobrados: {minutos_a_cobrar}\n"
-        f"Tarifa por minuto: ${minute_price:,.0f} COP\n"
-        f"Subtotal: ${Decimal(minutos_a_cobrar) * minute_price:,.0f} COP\n"
+        f"{desglose}\n<br>"
+        #f"Minutos cobrados: {minutos_a_cobrar}\n"
+        f"Tarifa por minuto: ${minute_price:,.0f} COP\n<br>"
+        f"Subtotal: ${Decimal(minutos_a_cobrar) * minute_price:,.0f} COP\n<br>"
     )
     if recargo_adicional > 0:
-        resumen += f"Recargo por exceso: ${recargo_adicional:,.0f} COP\n"
+        resumen += f"Recargo por exceso: ${recargo_adicional:,.0f} COP\n<br>"
     resumen += f"**TOTAL A PAGAR: ${total_price:,.0f} COP**"
     
     return total_price, resumen
@@ -380,6 +380,9 @@ async def send_reservation_qr(reservation: VisitorReservation):
             total_price=total_price_formatted,
         )
         
+        #print(f"la notification_client es: {notification_client}")
+        
+        
         # Enviar email via servicio de notificaciones (API REST)
         await notification_client.enviar_email(
             to_email=reservation.visitor_email,
@@ -431,6 +434,7 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
         HTTPException: Si reserva no existe, token inválido, estado no permite escaneo,
                       o la reserva fue violada por llegada tardía
     """
+    
     if background_tasks is None:
         background_tasks = BackgroundTasks()
     # Buscar reserva
@@ -468,13 +472,12 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
 
     # starts_at viene naive de la BD (guardado tal cual del front)
     starts_at_naive = r.starts_at if r.starts_at.tzinfo is None else r.starts_at.replace(tzinfo=None)
-    print(f"fecha QR es {now} ")
     
     if r.status == ReservationStatus.ACTIVE:
         # Primer escaneo: visitante llega al parqueadero
         # si se presenta más de 10 minutos después de la hora de inicio,
         # consideramos que perdió la reserva (incumplida).
-        late_threshold = starts_at_naive + timedelta(minutes=10)
+        late_threshold = starts_at_naive + timedelta(minutes=1120)
         if now > late_threshold:
             r.status = ReservationStatus.VIOLATED
             r.updated_at = now
@@ -483,7 +486,11 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
                 status_code=410,
                 detail="Reserva incumplida: el visitante llegó más de 10 minutos tarde"
             )
-        r.status = ReservationStatus.COMPLETED
+        
+        await complete_reservation(reservation_id)  # marca como COMPLETED
+        # IMPORTANTE: Recargar 'r' después de actualizar en BD
+        r = await VisitorReservation.get_or_none(id=reservation_id)
+        
     elif r.status == ReservationStatus.COMPLETED:
         # Segundo escaneo: visitante se va del parqueadero
         r.status = ReservationStatus.FINISHED
@@ -550,4 +557,29 @@ async def complete_reservation(reservation_id: int) -> bool:
         return False
     r.status = ReservationStatus.COMPLETED
     await r.save()
+    await send_reservation_completed_confirm(r)
     return True
+
+
+# -- helpers adicionales --------------------------------------------------
+async def send_reservation_completed_confirm(reservation: VisitorReservation):
+    """
+    Envía el email de confirmación de reserva.
+    """
+    try:
+        
+        html_body = render_wellcome_reservation(
+                visitor_name=reservation.visitor_name,
+                reservation_id=reservation.id
+            )
+        # Enviar email via servicio de notificaciones (API REST)
+        await notification_client.enviar_email(
+            to_email=reservation.visitor_email,
+            subject=f"Bienvenido A Conjunto Residencial Fontibon Reservado",
+            html_content=html_body,
+        )
+        
+    except Exception as e:
+        # Loguear error sin bloquear la ejecución
+        import sys
+        print(f"Error al enviar email de reserva confirmada {reservation.id}: {str(e)}", file=sys.stderr)
