@@ -55,3 +55,24 @@ class VisitorReservationRead(BaseModel):
     status: ReservationStatus
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ScanQRResponse(BaseModel):
+    """
+    Respuesta del escaneo QR con información de éxito/error.
+    
+    CÓDIGOS DE ÉXITO:
+    - 200: Escaneo exitoso
+      - ACTIVE → COMPLETED: Visitante llegó al parqueadero (primer escaneo)
+      - COMPLETED → FINISHED: Visitante se fue del parqueadero (segundo escaneo)
+    
+    CÓDIGOS DE ERROR:
+    - 400: Validación inválida
+    - 401: Token QR inválido
+    - 404: Reserva no encontrada
+    - 409: Reserva ya está finalizada
+    - 410: Reserva cancelada o incumplida (llegó tarde > 10 min)
+    """
+    status_code: int  # 200 = éxito, 4xx = error
+    detail: str  # Mensaje descriptivo del resultado
+    data: VisitorReservationRead  # Datos de la reserva actualizada

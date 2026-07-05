@@ -407,20 +407,27 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
     """
     Valida y procesa el escaneo del QR para una reserva.
     
-    Transiciones permitidas:
-    - ACTIVE → COMPLETED (primer escaneo: visitante llega)
-    - COMPLETED → FINISHED (segundo escaneo: visitante se va)
-    - Otros estados: rechaza con error descriptivo
+    **TRANSICIONES Y CÓDIGOS DE ÉXITO (Status 200):**
+    ✅ ACTIVE → COMPLETED (primer escaneo: visitante llega al parqueadero)
+       - Validación: Si llega > 10 min tarde → VIOLATED (error 410)
+       - Si llega a tiempo → Pasa a COMPLETED
+       - Se envía email de bienvenida en background
     
-    Nuevas reglas adicionales para el primer escaneo:
-    * Si el visitante escanea pasados **10 minutos** desde `starts_at`
-      la reserva pasa a `VIOLATED` (incumplida) y se retorna error 410.
-      El campo `updated_at` se actualiza con la hora actual.
-
-    When transitioning to FINISHED:
-    - Calculates final price with tolerance rules and surcharges
-    - Updates total_price in database
-    - Sends checkout email with receipt in background
+    ✅ COMPLETED → FINISHED (segundo escaneo: visitante se va del parqueadero)
+       - Calcula precio final con tolerancias y recargos
+       - Actualiza total_price en BD
+       - Envía email de recibo/checkout en background
+    
+    **CÓDIGOS DE ERROR:**
+    ❌ 400: Estado no permite escaneo
+    ❌ 401: Token QR inválido
+    ❌ 404: Reserva no encontrada
+    ❌ 409: Reserva ya está finalizada (no permite reescaneo)
+    ❌ 410: Reserva cancelada O incumplida (llegó > 10 min tarde)
+    
+    **REGLAS ESPECIALES PARA PRIMER ESCANEO:**
+    - Si escanea pasados 10 minutos desde starts_at → VIOLATED (error 410)
+    - El campo updated_at se actualiza con la hora actual
     
     Args:
         reservation_id: ID de la reserva
@@ -428,11 +435,10 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
         background_tasks: Tareas asincrónicas para enviar correo
     
     Returns:
-        VisitorReservation: Reserva actualizada tras escaneo
+        VisitorReservation: Reserva actualizada tras escaneo (estado COMPLETED o FINISHED)
     
     Raises:
-        HTTPException: Si reserva no existe, token inválido, estado no permite escaneo,
-                      o la reserva fue violada por llegada tardía
+        HTTPException: Con status_code específico y detail descriptivo
     """
     
     if background_tasks is None:
@@ -477,7 +483,7 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
         # Primer escaneo: visitante llega al parqueadero
         # si se presenta más de 10 minutos después de la hora de inicio,
         # consideramos que perdió la reserva (incumplida).
-        late_threshold = starts_at_naive + timedelta(minutes=1120)
+        late_threshold = starts_at_naive + timedelta(minutes=10)
         if now > late_threshold:
             r.status = ReservationStatus.VIOLATED
             r.updated_at = now
@@ -512,6 +518,8 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
     
     r.updated_at = now
     await r.save()
+    
+    
     return r
 
 async def list_disponible(limit: int = 100, offset: int = 0) -> List[VisitorReservation]:

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from datetime import datetime
 from math import ceil
-from propiedad_horizontal.app.schemas.parking_reservation import VisitorReservationCreate, VisitorReservationRead
+from propiedad_horizontal.app.schemas.parking_reservation import VisitorReservationCreate, VisitorReservationRead, ScanQRResponse
 from propiedad_horizontal.app.services.parking_reservation_service import (
     create_reservation, list_reservations, get_reservation, cancel_reservation, complete_reservation, list_reservations_by_user_id,
     scan_qr, _find_available_spot, _has_overlap_for_spot_datetime
@@ -100,7 +100,7 @@ async def create_reservation_endpoint(payload: VisitorReservationCreate, backgro
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{reservation_id}/scan", response_model=VisitorReservationRead)
+@router.get("/{reservation_id}/scan", response_model=ScanQRResponse, status_code=200)
 async def scan_qr_endpoint(reservation_id: int, token: str = Query(..., min_length=1), background_tasks: BackgroundTasks = None):
     """
     Escanea un QR de parqueadero y procesa la transición de estado.
@@ -109,11 +109,17 @@ async def scan_qr_endpoint(reservation_id: int, token: str = Query(..., min_leng
     - ACTIVE → COMPLETED: Visitante llega al parqueadero (primer escaneo)
     - COMPLETED → FINISHED: Visitante se va (segundo escaneo)
     
+    **Respuesta de éxito (200):**
+    - status_code: 200
+    - detail: Descripción del cambio de estado
+    - data: Objeto VisitorReservationRead con los datos actualizados
+    
     **Códigos de error:**
+    - 400: Validación inválida
     - 401: Token QR inválido
     - 404: Reserva no encontrada
     - 409: Reserva ya está finalizada (no permite reescaneo)
-    - 410: Reserva fue cancelada (no se puede usar)
+    - 410: Reserva fue cancelada o incumplida (llegó > 10 minutos tarde)
     
     Args:
         reservation_id: ID de la reserva
@@ -121,12 +127,31 @@ async def scan_qr_endpoint(reservation_id: int, token: str = Query(..., min_leng
         background_tasks: Para ejecutar tareas asincrónicas después de la respuesta
     
     Returns:
-        VisitorReservationRead: Reserva con estado actualizado
+        ScanQRResponse: Contiene status_code, detail y datos de la reserva actualizada
     """
-    # lector de QR llamará aquí
     if background_tasks is None:
         background_tasks = BackgroundTasks()
-    return await scan_qr(reservation_id, token, background_tasks)
+    
+    # Ejecutar escaneo
+    reservation = await scan_qr(reservation_id, token, background_tasks)
+    
+    # Determinar el mensaje según el estado de la reserva
+    if reservation.status.value == "COMPLETED":
+        detail = f"✅ Visitante llegó al parqueadero. Reserva #{reservation_id} completada (primer escaneo)."
+    elif reservation.status.value == "FINISHED":
+        detail = f"✅ Visitante se fue del parqueadero. Reserva #{reservation_id} finalizada (segundo escaneo). Importe: ${reservation.total_price:,.0f} COP"
+    else:
+        detail = f"Reserva #{reservation_id} actualizada a estado {reservation.status.value}"
+    
+    # Convertir a DTO
+    dto = VisitorReservationRead.model_validate(reservation)
+    dto.vehicle_type_id = reservation.vehicle_type_id
+    
+    return ScanQRResponse(
+        status_code=200,
+        detail=detail,
+        data=dto
+    )
 
 @router.post("/{reservation_id}/cancel", status_code=204, dependencies=[Depends(require_permissions(["reservaparqueaderos:write"]))])
 async def cancel_reservation_endpoint(reservation_id: int):
