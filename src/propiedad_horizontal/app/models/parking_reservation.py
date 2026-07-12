@@ -47,7 +47,8 @@ class VisitorReservation(models.Model):
 
     # Facturación
     billed_minutes = fields.IntField()  # Minutos a facturar
-    total_price = fields.DecimalField(max_digits=12, decimal_places=2)  # Precio total
+    #total_price = fields.DecimalField(max_digits=12, decimal_places=2)  
+    total_price = fields.IntField()  # Precio total
 
     status = fields.CharEnumField(ReservationStatus, default=ReservationStatus.ACTIVE)
 

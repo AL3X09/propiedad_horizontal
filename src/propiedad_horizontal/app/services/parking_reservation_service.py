@@ -1,5 +1,5 @@
 from typing import List, Optional
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from math import ceil
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
@@ -12,6 +12,7 @@ from propiedad_horizontal.app.utils.qr import generate_qr_base64
 from propiedad_horizontal.app.utils.email_renderer import (
     render_checkout_email,
     render_reservation_confirmation,
+    render_reservation_cancelled,
     render_wellcome_reservation,
 )
 from propiedad_horizontal.app.services.notification_client import notification_client
@@ -22,6 +23,79 @@ from propiedad_horizontal.app.models.persona import Persona
 from propiedad_horizontal.app.domain.enums import ReservationStatus, ParkingSpotStatus, AssignmentStatus
 
 BOGOTA_TZ = ZoneInfo(APP_TIMEZONE)
+MAX_DAYTIME_DURATION = timedelta(hours=2)
+NIGHTTIME_MAX_END_HOUR = 6
+NIGHTTIME_MAX_START_HOUR = 22
+NIGHTTIME_FLAT_RATE = Decimal("10000")
+OVERTIME_SURCHARGE = Decimal("5000")
+
+
+def _round_price_to_integer(price: Decimal) -> int:
+    """
+    Redondea un precio (COP) al número entero más cercano usando redondeo comercial.
+    COP no maneja decimales, siempre se almacena como entero.
+    Redondeo comercial: decimales >= 0.5 → arriba; < 0.5 → abajo
+    
+    Args:
+        price: Precio como Decimal
+    
+    Returns:
+        Precio redondeado al número entero más cercano (sin centavos)
+    """
+    return int(price.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+
+
+def _format_price_to_string(price: Decimal) -> str:
+    """
+    Convierte un Decimal a string entero sin decimales (COP).
+    Evita problemas como '1E+4' almacenando '10000' en su lugar.
+    Aplica redondeo comercial al número entero más cercano.
+    
+    Args:
+        price: Precio como Decimal
+    
+    Returns:
+        String con el precio como número entero (sin centavos)
+    """
+    rounded_price = _round_price_to_integer(price)
+    return str(rounded_price)
+
+#valida si la reserva es nocturna, si la hora de inicio es mayor o igual a 22 o menor o igual a 6
+def _is_night_reservation(starts_at: datetime) -> bool:
+    return starts_at.hour >= NIGHTTIME_MAX_START_HOUR or starts_at.hour <= NIGHTTIME_MAX_END_HOUR
+
+
+def _resolve_reservation_window(starts_at: datetime, ends_at: datetime) -> tuple[datetime, bool, int]:
+    """Normaliza la ventana de reserva según la regla de negocio solicitada."""
+    
+    duration_minutes=0
+    
+    if ends_at <= starts_at:
+        raise ValueError("La hora de finalización debe ser posterior al hora de inicio.")
+
+    is_night = _is_night_reservation(starts_at)
+    if is_night:
+        if starts_at.hour >= NIGHTTIME_MAX_START_HOUR:
+            max_end = starts_at.replace(hour=NIGHTTIME_MAX_END_HOUR, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            
+        else:
+            max_end = starts_at.replace(hour=NIGHTTIME_MAX_END_HOUR, minute=0, second=0, microsecond=0)
+            
+        if ends_at < max_end:
+            ends_at = max_end
+            duration_minutes = max(1, int(ceil(28800 / 60.0)))
+            
+        #duration_minutes = max(1, int(ceil((ends_at - starts_at).total_seconds() / 60.0)))
+        return ends_at, True, duration_minutes
+
+    duration = ends_at - starts_at
+    if duration > MAX_DAYTIME_DURATION:
+        raise ValueError("La reserva en el horario seleccionado no puede superar las 2 horas.")
+
+    duration_minutes = max(1, int(ceil(duration.total_seconds() / 60.0)))
+    
+    return ends_at, False, duration_minutes
+
 
 async def _has_overlap_for_spot_datetime(spot_id: int, start_dt: datetime, end_dt: datetime) -> bool:
     # Solape con otras reservas
@@ -77,14 +151,9 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
     Returns:
         tuple (total_price: Decimal, detalle: str): Precio total y desglose para el correo
     """
-    spot = await reservation.spot
-    minute_price = Decimal(spot.minute_price)
-    
     starts = reservation.starts_at
     ends = reservation.ends_at
 
-    # Si vienen de la BD como aware (TIMESTAMPTZ), convertir a Bogotá para mostrar
-    # Si por algún dato viejo llegasen naive, asumir UTC
     if starts.tzinfo is None:
         starts = starts.replace(tzinfo=timezone.utc)
     if ends.tzinfo is None:
@@ -94,9 +163,11 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
     #starts_bogota = starts.astimezone(BOGOTA_TZ)
     #ends_bogota   = ends.astimezone(BOGOTA_TZ)
 
+    spot = await reservation.spot
+    minute_price = Decimal(spot.minute_price) if spot else Decimal(0)
+
     # El cálculo de diferencia NO depende de timezone, usa los aware directamente
     tiempo_real_segundos = (ends - starts).total_seconds()
-      
     tiempo_real_minutos = tiempo_real_segundos / 60.0
     print(f"Tiempo real calculado: {tiempo_real_minutos:.1f} min (desde {starts} hasta {ends})")
     #minutos facturados
@@ -127,13 +198,17 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
         else:
             # Supera tolerancia: recargo de $5.000
             minutos_a_cobrar = int(tiempo_real_minutos)
-            recargo_adicional = Decimal(5000)
+            recargo_adicional = OVERTIME_SURCHARGE
             desglose += f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. Tiempo excedido en: {diferencia:.1f} min. es mayor a 5 min. Se cobraran {minutos_a_cobrar:.1f} min + $5.000 de recargo."
     else:
         # Exactamente el tiempo
         desglose += f"El Tiempo real usado fue de: {tiempo_real_minutos:.1f} min. Se cobraran el timpo exacto {billed_minutes} min."
     
     total_price = (Decimal(minutos_a_cobrar) * minute_price) + recargo_adicional
+    print(f"Total calculado: {total_price} COP")
+    # Redondear al número entero más cercano (COP no tiene decimales)
+    total_price_rounded = _round_price_to_integer(total_price)
+    print(f"Total redondeado: {total_price_rounded} COP")
     
     # Desglose completo
     resumen = (
@@ -144,9 +219,9 @@ async def _compute_total_price_checkout(reservation: VisitorReservation) -> tupl
     )
     if recargo_adicional > 0:
         resumen += f"Recargo por exceso: ${recargo_adicional:,.0f} COP\n<br>"
-    resumen += f"**TOTAL A PAGAR: ${total_price:,.0f} COP**"
+    resumen += f"**TOTAL A PAGAR: ${total_price_rounded:,} COP**"
     
-    return total_price, resumen
+    return Decimal(total_price_rounded), resumen
 
 
 async def send_checkout_email(reservation: VisitorReservation, total_price: Decimal, desglose: str):
@@ -174,7 +249,7 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
         
         starts_at_formatted = format_datetime(reservation.starts_at)
         ends_at_formatted = format_datetime(reservation.ends_at)
-        total_price_formatted = f"${total_price:,.0f} COP"
+        total_price_formatted = f"${int(total_price):,} COP"
         
         # Renderizar HTML desde template
         html_body = render_checkout_email(
@@ -190,7 +265,7 @@ async def send_checkout_email(reservation: VisitorReservation, total_price: Deci
         # Enviar email via servicio de notificaciones (API REST)
         await notification_client.enviar_email(
             to_email=reservation.visitor_email,
-            subject=f"✅ Recibo: Parqueadero #{reservation.id} - ${total_price:,.0f} COP",
+            subject=f"✅ Recibo: Parqueadero #{reservation.id} - ${int(total_price):,} COP",
             html_content=html_body,
         )
         
@@ -219,8 +294,10 @@ async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, sta
     # Las fechas que llegan del frontend ya están en hora de Colombia (Bogotá)
     # No se hace ninguna conversión de timezone - se almacenan tal cual
     # El frontend envía la fecha en formato naive (sin timezone) representando hora de Bogotá
-    if ends_at <= starts_at:
-        raise ValueError("La hora de finalización debe ser posterior al inicio.")
+    effective_end, is_night_reservation, duration_minutes = _resolve_reservation_window(starts_at, ends_at)
+    ends_at = effective_end
+    billed_minutes = duration_minutes
+
     if len(visitor_type_document)  < 2 or len(visitor_type_document) > 3:
         raise ValueError("El tipo de documento debe tener una logitud igual a 3 caracteres.")
     if len(visitor_document_number) < 5 or len(visitor_document_number) > 20 or not visitor_document_number.isdigit():
@@ -282,13 +359,21 @@ async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, sta
         pass
     else:
         total_minutes = (ends_at - starts_at).total_seconds() / 60.0
-        billed_minutes = max(1, int(ceil(total_minutes)))
-        if billed_minutes < 1:
-            billed_minutes = 60  # Mínimo una hora
+        if is_night_reservation:
+            billed_minutes = max(1, int(ceil(total_minutes)))
+        else:
+            billed_minutes = max(1, int(ceil(total_minutes)))
+            if billed_minutes < 1:
+                billed_minutes = 60  # Mínimo una hora
 
     #hourly_price: Decimal = Decimal(spot.hourly_price)
     #total_price = hourly_price * billed_minutes
 
+    # Precio inicial: tarifa nocturna fija o 0 (se calculará en checkout)
+    initial_price = NIGHTTIME_FLAT_RATE if is_night_reservation else Decimal('0')
+    initial_price_str = _format_price_to_string(initial_price)
+    #print(f"Creating reservation for ends_at {ends_at}")
+    
     reservation = await VisitorReservation.create(
         spot_id=spot_id,
         starts_at=starts_at,
@@ -302,7 +387,7 @@ async def create_reservation(spot_id: int, casa_apto_interior_torre_id: int, sta
         vehicle_type_id=vehicle_type_id,
         vehicle_code=vehicle_code.upper(),
         billed_minutes=billed_minutes,
-        total_price='0',
+        total_price=initial_price_str,
         status=ReservationStatus.ACTIVE,
         qr_token=""
     )
@@ -357,8 +442,12 @@ async def send_reservation_qr(reservation: VisitorReservation):
         # Formatear fechas de manera legible
         starts_at_formatted = format_datetime(reservation.starts_at)
         ends_at_formatted = format_datetime(reservation.ends_at)
-        # Formatear precio (asumir COP si no hay otra moneda)
-        total_price_formatted = f"${reservation.total_price:,.0f} COP"
+        # Formatear precio (asumir COP si no hay otra moneda) - reservation.total_price es string
+        try:
+            total_price_int = int(float(reservation.total_price))
+        except (ValueError, TypeError):
+            total_price_int = 0
+        total_price_formatted = f"${total_price_int:,} COP"
         
         # Obtener el tipo de vehículo con label (incluye emoji)
         vehicle_type = await VehicleType.get_or_none(id=reservation.vehicle_type_id)
@@ -503,9 +592,10 @@ async def scan_qr(reservation_id: int, token: str, background_tasks: BackgroundT
         # Almacenar la hora tal cual (sin conversión a UTC)
         r.ends_at = now
         
-        # Calcular precio final con tolerancia y recargos
+        # Calcular precio final con tolerancia y recargos (ya viene redondeado)
         total_price, desglose = await _compute_total_price_checkout(r)
-        r.total_price = total_price
+        # Convertir a string sin notación científica para almacenamiento en VARCHAR
+        r.total_price = _format_price_to_string(total_price)
         
         # Enviar email de checkout en background
         background_tasks.add_task(send_checkout_email, r, total_price, desglose)
@@ -557,6 +647,7 @@ async def cancel_reservation(reservation_id: int) -> bool:
         raise ValueError("Solo se puede cancelar una reserva activa")
     r.status = ReservationStatus.CANCELLED
     await r.save()
+    await send_reservation_cancelled_confirm(r)
     return True
 
 async def complete_reservation(reservation_id: int) -> bool:
@@ -570,6 +661,32 @@ async def complete_reservation(reservation_id: int) -> bool:
 
 
 # -- helpers adicionales --------------------------------------------------
+async def send_reservation_cancelled_confirm(reservation: VisitorReservation):
+    """
+    Envía el email de cancelación de reserva.
+    """
+    try:
+        spot = await reservation.spot
+        spot_number = str(spot.code) if spot else "TBD"
+
+        html_body = render_reservation_cancelled(
+            visitor_name=reservation.visitor_name,
+            reservation_id=reservation.id,
+            spot_number=spot_number,
+        )
+        # Enviar email via servicio de notificaciones (API REST)
+        await notification_client.enviar_email(
+            to_email=reservation.visitor_email,
+            subject=f"❌ Reserva cancelada #{reservation.id} - Sin cobro",
+            html_content=html_body,
+        )
+
+    except Exception as e:
+        # Loguear error sin bloquear la ejecución
+        import sys
+        print(f"Error al enviar email de reserva cancelada {reservation.id}: {str(e)}", file=sys.stderr)
+
+
 async def send_reservation_completed_confirm(reservation: VisitorReservation):
     """
     Envía el email de confirmación de reserva.

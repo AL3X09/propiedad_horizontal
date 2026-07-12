@@ -134,6 +134,32 @@ def render_reservation_confirmation(
     }
     return _simple_template_render(template, context)
 
+
+def render_reservation_cancelled(
+    visitor_name: str,
+    reservation_id: int,
+    spot_number: str,
+) -> str:
+    """
+    Renderiza el email de cancelación de reserva.
+
+    Args:
+        visitor_name: Nombre del visitante
+        reservation_id: ID de la reserva
+        spot_number: Número/código del puesto de parqueadero
+
+    Returns:
+        HTML del email listo para enviar
+    """
+    template = _load_template("reservation_cancelled.html")
+    context = {
+        "visitor_name": visitor_name,
+        "reservation_id": reservation_id,
+        "spot_number": spot_number,
+    }
+    return _simple_template_render(template, context)
+
+
 def render_wellcome_reservation(
     visitor_name: str,
     reservation_id: int
